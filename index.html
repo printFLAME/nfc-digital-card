@@ -209,7 +209,7 @@ img { display: block; max-width: 100%; height: auto; }
 .skills__title i { color: var(--first-color); font-size: 1.5rem; }
 .skills__group { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
 .skills__item { display: flex; align-items: center; column-gap: .5rem; }
-.skills__item img { width: 24px; } /* Controls size of your SVG skill icons */
+.skills__item img { width: 24px; } 
 
 /*=============== TESTIMONIALS SECTION ===============*/
 .testimonials__container { padding-bottom: 3rem; }
@@ -278,7 +278,7 @@ img { display: block; max-width: 100%; height: auto; }
   .contact__container { grid-template-columns: 1fr 1fr; column-gap: 4rem; }
 }
       </style>
-      <title>Responsive portfolio website | Bedimcode</title>
+      <title>Responsive portfolio website | FLAME</title>
    </head>
    <body>
       <!--==================== CUSTOM CURSOR ====================-->
@@ -287,7 +287,7 @@ img { display: block; max-width: 100%; height: auto; }
       <!--==================== HEADER & NAV ====================-->
       <header class="header" id="header">
          <nav class="nav container">
-            <a href="/index.html" class="nav__logo">Bianca</a>
+            <a href="/index.html" class="nav__logo">FLAME</a>
             <div class="nav__menu" id="nav-menu">
                <ul class="nav__list">
                   <li><a href="#home" class="nav__link active-link">Home</a></li>
@@ -313,7 +313,7 @@ img { display: block; max-width: 100%; height: auto; }
          <section class="home section" id="home">
             <div class="home__container container grid">
                <div class="home__content">
-                  <h3 class="home__subtitle">Hi! I'm Bianca - Based on Peru</h3>
+                  <h3 class="home__subtitle">Hi! I'm FLAME - Based in India</h3>
                   <h1 class="home__title">
                      Creative Designer & <br>
                      <span id="home-typed">Web Developer</span>
@@ -566,7 +566,7 @@ img { display: block; max-width: 100%; height: auto; }
                      <i class="ri-mail-line contact__icon"></i>
                      <div class="contact__data">
                         <h3 class="contact__title">Email</h3>
-                        <a href="mailto:bianca123@email.com" class="contact__address">bianca123@email.com</a>
+                        <a href="mailto:lameflamesgfx@gmail" class="contact__address">flame@email.com</a>
                      </div>
                   </div>
                   
@@ -585,18 +585,18 @@ img { display: block; max-width: 100%; height: auto; }
       <!--==================== FOOTER ====================-->
       <footer class="footer">
          <div class="footer__container container">
-            <h2 class="footer__title">COLLABORATE WITH BIANCA AND START YOUR <br> JOURNEY IN CREATIVE DESIGN TODAY.</h2>
+            <h2 class="footer__title">COLLABORATE WITH FLAME AND START YOUR <br> JOURNEY IN CREATIVE DESIGN TODAY.</h2>
             <ul class="footer__links">
                <li><a href="#work" class="footer__link">Work</a></li>
                <li><a href="#service" class="footer__link">Services</a></li>
                <li><a href="#skills" class="footer__link">Skills</a></li>
             </ul>
             <div class="footer__social">
-               <a href="https://www.facebook.com/bedimcode" class="footer__social-link"><i class="ri-facebook-circle-fill"></i></a>
-               <a href="https://www.instagram.com/bedimcode/" class="footer__social-link"><i class="ri-instagram-fill"></i></a>
-               <a href="https://github.com/bedimcode" class="footer__social-link"><i class="ri-github-fill"></i></a>
+               <a href="#" class="footer__social-link"><i class="ri-facebook-circle-fill"></i></a>
+               <a href="#" class="footer__social-link"><i class="ri-instagram-fill"></i></a>
+               <a href="#" class="footer__social-link"><i class="ri-github-fill"></i></a>
             </div>
-            <span class="footer__copy">&#169; All Rights Reserved By Bedimcode</span>
+            <span class="footer__copy">&#169; All Rights Reserved By FLAME</span>
          </div>
       </footer>
       
@@ -691,10 +691,13 @@ const scrollActive = () =>{
             sectionId = current.getAttribute('id'),
             sectionsClass = document.querySelector('.nav__menu a[href*=' + sectionId + ']')
 
-      if(scrollDown > sectionTop && scrollDown <= sectionTop + sectionHeight){
-         sectionsClass.classList.add('active-link')
-      }else{
-         sectionsClass.classList.remove('active-link')
+      // Safety check added here to prevent JS crashing if a section is missing from nav
+      if (sectionsClass) {
+         if(scrollDown > sectionTop && scrollDown <= sectionTop + sectionHeight){
+            sectionsClass.classList.add('active-link')
+         }else{
+            sectionsClass.classList.remove('active-link')
+         }
       }
    })
 }
@@ -711,8 +714,8 @@ window.addEventListener('scroll', scrollUp)
 const sr = ScrollReveal({
    origin: 'top',
    distance: '60px',
-   duration: 2500,
-   delay: 400,
+   duration: 1200, // Reduced from 2500 for faster load times
+   delay: 150,     // Reduced from 400 for snappier appearance
 })
 
 sr.reveal(`.home__content, .services__container, .skills__container, .testimonials__container, .footer__container`)
