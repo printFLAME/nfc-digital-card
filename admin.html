@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | FLAME</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.9.0/fonts/remixicon.css">
+    <style>
+        :root {
+            --primary: #c90000;
+            --bg: #050505;
+            --surface: rgba(15, 15, 15, 0.85);
+            --text: #f0f0f0;
+            --text-muted: #888888;
+        }
+
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { margin: 0; background-color: var(--bg); color: var(--text); padding: 20px; }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: var(--surface);
+            border: 1px solid rgba(201, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+        }
+
+        h1, h2 { text-transform: uppercase; letter-spacing: 2px; border-bottom: 2px solid var(--primary); padding-bottom: 10px; }
+        
+        /* Form Inputs */
+        label { display: block; margin-top: 1.5rem; color: var(--text-muted); font-size: 0.9rem; text-transform: uppercase; }
+        input, textarea {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #333;
+            color: white;
+            padding: 12px;
+            margin-top: 5px;
+            border-radius: 6px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        input:focus, textarea:focus { border-color: var(--primary); }
+        textarea { resize: vertical; min-height: 100px; }
+
+        /* Buttons */
+        .btn {
+            display: inline-block;
+            background: transparent;
+            color: white;
+            border: 1px solid var(--primary);
+            padding: 10px 20px;
+            text-transform: uppercase;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: 0.3s;
+        }
+        .btn:hover { background: var(--primary); color: black; }
+        .btn-small { padding: 5px 10px; font-size: 0.8rem; border-color: #555; }
+        .btn-small:hover { background: #555; color: white; }
+        .btn-save { width: 100%; background: var(--primary); color: black; font-size: 1.2rem; padding: 15px; margin-top: 2rem; }
+        
+        /* Dynamic Lists */
+        .list-item {
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            margin-top: 10px;
+            border-left: 3px solid var(--primary);
+            position: relative;
+        }
+        .remove-btn { position: absolute; top: 10px; right: 10px; color: var(--primary); cursor: pointer; font-weight: bold; }
+
+        #dashboard { display: none; }
+        #login-screen { text-align: center; margin-top: 20vh; }
+    </style>
+</head>
+<body>
+
+    <!-- LOGIN SCREEN -->
+    <div class="container" id="login-screen">
+        <i class="ri-lock-2-line" style="font-size: 3rem; color: var(--primary);"></i>
+        <h1>Admin Access</h1>
+        <p>Log in with your Google account to edit your NFC card profile.</p>
+        <button class="btn" id="login-btn"><i class="ri-google-fill"></i> Sign in with Google</button>
+    </div>
+
+    <!-- DASHBOARD SCREEN -->
+    <div class="container" id="dashboard">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h1>Edit Profile</h1>
+            <button class="btn btn-small" id="logout-btn">Logout</button>
+        </div>
+
+        <p style="color: var(--primary); font-size: 0.9rem;">Editing profile URL ID: <b>flame</b></p>
+
+        <!-- General Info -->
+        <label>Hero & About Description</label>
+        <textarea id="input-desc" placeholder="Write your bio here..."></textarea>
+
+        <!-- Contact Links -->
+        <h2>Contact Links <button class="btn btn-small" style="float: right;" id="add-link-btn">+ Add Link</button></h2>
+        <div id="links-container"></div>
+        <p style="font-size: 0.8rem; color: var(--text-muted);">Max 5 links recommended.</p>
+
+        <!-- Save Button -->
+        <button class="btn btn-save" id="save-btn">Push Updates to Live Card</button>
+    </div>
+
+    <!--==================== FIREBASE CONNECTION & LOGIC ====================-->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+        import { getFirestore, collection, query, where, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyA043mcgewwke4Rt2HusOPbcxgmzUv2bM0",
+            authDomain: "nfc-card-by-flame.firebaseapp.com",
+            projectId: "nfc-card-by-flame",
+            storageBucket: "nfc-card-by-flame.firebasestorage.app",
+            messagingSenderId: "185781519047",
+            appId: "1:185781519047:web:dcf141d9669a3055e274e2"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+        const db = getFirestore(app);
+
+        // UI Elements
+        const loginScreen = document.getElementById('login-screen');
+        const dashboard = document.getElementById('dashboard');
+        const linksContainer = document.getElementById('links-container');
+        let currentDocId = null;
+
+        // --- AUTHENTICATION LOGIC ---
+        document.getElementById('login-btn').addEventListener('click', () => {
+            signInWithPopup(auth, provider).catch(error => alert("Login failed: " + error.message));
+        });
+
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            signOut(auth);
+        });
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                loginScreen.style.display = 'none';
+                dashboard.style.display = 'block';
+                fetchData();
+            } else {
+                loginScreen.style.display = 'block';
+                dashboard.style.display = 'none';
+            }
+        });
+
+        // --- FETCH DATA FROM DATABASE ---
+        async function fetchData() {
+            try {
+                const q = query(collection(db, "DigitalCard"), where("name", "==", "flame"));
+                const querySnapshot = await getDocs(q);
+                
+                if (!querySnapshot.empty) {
+                    const docSnap = querySnapshot.docs[0];
+                    currentDocId = docSnap.id;
+                    const data = docSnap.data();
+
+                    // Pre-fill fields
+                    document.getElementById('input-desc').value = data.description || '';
+                    
+                    // Render existing links
+                    linksContainer.innerHTML = '';
+                    if (data.links) {
+                        data.links.forEach(link => addLinkField(link.label, link.url));
+                    }
+                } else {
+                    alert("Profile 'flame' not found in database! Make sure you created it.");
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Error fetching data.");
+            }
+        }
+
+        // --- DYNAMIC FORM LOGIC ---
+        function addLinkField(label = '', url = '') {
+            const div = document.createElement('div');
+            div.className = 'list-item';
+            div.innerHTML = `
+                <div class="remove-btn" onclick="this.parentElement.remove()">X</div>
+                <input type="text" class="link-label" placeholder="Button Label (e.g., LinkedIn)" value="${label}">
+                <input type="text" class="link-url" placeholder="URL (e.g., https://...)" value="${url}">
+            `;
+            linksContainer.appendChild(div);
+        }
+
+        document.getElementById('add-link-btn').addEventListener('click', () => addLinkField());
+
+        // --- SAVE DATA TO DATABASE ---
+        document.getElementById('save-btn').addEventListener('click', async () => {
+            if (!currentDocId) return;
+            
+            const btn = document.getElementById('save-btn');
+            btn.innerText = "Saving...";
+
+            // Gather Description
+            const description = document.getElementById('input-desc').value;
+
+            // Gather Links
+            const links = [];
+            document.querySelectorAll('#links-container .list-item').forEach(item => {
+                const label = item.querySelector('.link-label').value;
+                const url = item.querySelector('.link-url').value;
+                if (label && url) links.push({ label, url });
+            });
+
+            // Push to Firebase
+            try {
+                await updateDoc(doc(db, "DigitalCard", currentDocId), {
+                    description: description,
+                    links: links
+                });
+                btn.innerText = "Updates Live!";
+                btn.style.background = "#00ff00";
+                setTimeout(() => { btn.innerText = "Push Updates to Live Card"; btn.style.background = "var(--primary)"; }, 3000);
+            } catch (error) {
+                console.error(error);
+                alert("Error saving data!");
+                btn.innerText = "Push Updates to Live Card";
+            }
+        });
+    </script>
+</body>
+</html>
