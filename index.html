@@ -657,8 +657,8 @@ window.addEventListener('scroll', scrollUp)
          const urlParams = new URLSearchParams(window.location.search);
          const userSlug = urlParams.get('user') || 'flame'; 
          let currentDocId = null;
-         let cardOwnerUid = null; // Track who owns the card
-         let currentUserUid = null; // Track who is looking at the card
+         let cardOwnerUid = null; 
+         let currentUserUid = null; 
 
          // UI Elements
          const loader = document.getElementById('loader');
@@ -676,8 +676,8 @@ window.addEventListener('scroll', scrollUp)
          // 1. Check Auth State & Trigger Database Load
          onAuthStateChanged(auth, (user) => {
             if (user) {
-               currentUserUid = user.uid; // Store the logged-in user's UID
-               document.getElementById('footer-login').style.display = 'none'; // Hide login padlocks
+               currentUserUid = user.uid; 
+               document.getElementById('footer-login').style.display = 'none'; 
             }
             loadProfileData(); 
          });
@@ -689,22 +689,56 @@ window.addEventListener('scroll', scrollUp)
                const querySnapshot = await getDocs(q);
        
                if (querySnapshot.empty) {
-                  // EMPTY CARD -> SHOW SETUP SCREEN
-                  loader.style.display = 'none';
-                  setupScreen.style.display = 'flex';
+                  // NEW LOGIC: Prevent the login loop
+                  if (currentUserUid) {
+                      // User just logged in to claim this empty slot
+                      loader.style.display = 'none';
+                      setupScreen.style.display = 'none';
+                      mainHeader.style.display = 'block';
+                      mainContent.style.display = 'block';
+                      mainFooter.style.display = 'block';
+                      
+                      // Inject fallback data so the background UI doesn't break
+                      publicProjects.innerHTML = `
+                        <article class="work__card">
+                           <a href="#" class="work__link">
+                              <img src="work-img-1.png" alt="Work" class="work__img" onerror="this.src='https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80'">
+                              <i class="ri-arrow-right-up-line work__icon"></i>
+                           </a>
+                           <h3 class="work__number">01</h3>
+                           <h2 class="work__name">Sample Project</h2>
+                           <p class="work__description">Add your first project via the Admin Settings gear.</p>
+                        </article>
+                     `;
+                      addAdminProject(); 
+                      addAdminLink();
+                      
+                      // Initialize animations for the background
+                      const sr = ScrollReveal({ origin: 'top', distance: '60px', duration: 1200, delay: 150 });
+                      sr.reveal(`.home__content, .services__container, .skills__container, .footer__container`);
+                      sr.reveal(`.home__image, .about__data, .contact__container`, {origin: 'right'});
+                      sr.reveal(`.about__title`, {origin: 'left'});
+                      sr.reveal(`.work__card`, {interval: 100}); 
+
+                      // Automatically pop open the editor so they can save their profile
+                      editModal.style.display = 'flex';
+                      
+                  } else {
+                      // Empty card and NOT logged in -> show Setup Screen
+                      loader.style.display = 'none';
+                      setupScreen.style.display = 'flex';
+                  }
                } else {
                   // CARD HAS DATA -> RENDER PROFILE
                   const docSnap = querySnapshot.docs[0];
                   currentDocId = docSnap.id;
                   const data = docSnap.data();
-                  cardOwnerUid = data.ownerUid; // Capture the registered owner
+                  cardOwnerUid = data.ownerUid; 
 
-                  // SECURITY CHECK: Unhide Edit Gear ONLY if looking at own card
                   if (currentUserUid === cardOwnerUid) {
                       editFab.style.display = 'flex';
                   }
                   
-                  // Inject Image & Bio
                   if (data.avatar) {
                      document.querySelector('.avatar').src = data.avatar;
                      document.getElementById('edit-avatar').value = data.avatar;
@@ -715,12 +749,10 @@ window.addEventListener('scroll', scrollUp)
                      document.getElementById('edit-desc').value = data.description;
                   }
                   if (data.vcf) {
-                      // Finds the Save Contact button via string search and replaces the href
                       document.body.innerHTML = document.body.innerHTML.replace('YOUR_CARD_FILE_LINK', data.vcf);
                       document.getElementById('edit-vcf').value = data.vcf;
                   }
                   
-                  // Inject Projects
                   publicProjects.innerHTML = '';
                   editProjects.innerHTML = ''; 
                   if (data.projects && data.projects.length > 0) {
@@ -754,7 +786,6 @@ window.addEventListener('scroll', scrollUp)
                      addAdminProject(); 
                   }
 
-                  // Inject Links
                   publicLinks.innerHTML = '';
                   editLinks.innerHTML = ''; 
                   if (data.links && data.links.length > 0) {
@@ -766,14 +797,12 @@ window.addEventListener('scroll', scrollUp)
                      addAdminLink(); 
                   }
 
-                  // Reveal the public UI
                   loader.style.display = 'none';
                   setupScreen.style.display = 'none';
                   mainHeader.style.display = 'block';
                   mainContent.style.display = 'block';
                   mainFooter.style.display = 'block';
 
-                  // INIT ANIMATIONS
                   const sr = ScrollReveal({ origin: 'top', distance: '60px', duration: 1200, delay: 150 });
                   sr.reveal(`.home__content, .services__container, .skills__container, .footer__container`);
                   sr.reveal(`.home__image, .about__data, .contact__container`, {origin: 'right'});
@@ -847,21 +876,12 @@ window.addEventListener('scroll', scrollUp)
                if (label && url) links.push({ label, url });
             });
 
-            // Package the data for Firestore
-            const dbPayload = { 
-               description, 
-               avatar, 
-               vcf, 
-               projects, 
-               links 
-            };
+            const dbPayload = { description, avatar, vcf, projects, links };
 
             try {
                if (currentDocId) {
-                  // If card exists, just update it (security check prevents tampering)
                   await updateDoc(doc(db, "DigitalCard", currentDocId), dbPayload);
                } else {
-                  // If claiming a blank card, add the userSlug and lock the card to their Google UID
                   dbPayload.name = userSlug;
                   dbPayload.ownerUid = currentUserUid; 
                   await addDoc(collection(db, "DigitalCard"), dbPayload);
