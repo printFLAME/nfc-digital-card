@@ -146,6 +146,7 @@ img { display: block; max-width: 100%; height: auto; }
 .home__img {
   width: 280px; border-radius: 20rem 20rem 2rem 2rem; position: relative;
   z-index: 2; border: 4px solid var(--container-color);
+  object-fit: cover; aspect-ratio: 1/1; /* Keeps uploaded images perfectly sized */
 }
 .home__image .blob-big { top: 3rem; left: 2rem; }
 .home__circle {
@@ -181,10 +182,9 @@ img { display: block; max-width: 100%; height: auto; }
 .work__container { 
   padding-bottom: 3rem; 
   display: grid;
-  grid-template-columns: 1fr; /* 1 column on mobile */
+  grid-template-columns: 1fr; 
   gap: 1.5rem;
 }
-/* Lock it to 2 columns on tablets, 3 on PC */
 @media (min-width: 540px) {
   .work__container { grid-template-columns: repeat(2, 1fr); }
 }
@@ -195,7 +195,7 @@ img { display: block; max-width: 100%; height: auto; }
 .work__link { display: block; position: relative; border-radius: 1rem; overflow: hidden; margin-bottom: 1.5rem; }
 .work__img { 
   width: 100%; 
-  aspect-ratio: 16/9; /* Forces the image to stay a perfectly sized rectangle */
+  aspect-ratio: 16/9; 
   object-fit: cover; 
   transition: transform .4s; 
 }
@@ -279,13 +279,13 @@ img { display: block; max-width: 100%; height: auto; }
 .setup-screen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--body-color); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 2000; text-align: center; padding: 2rem; color: var(--text-color); }
 .setup-screen h1 { font-size: var(--biggest-font-size); margin: 1rem 0; color: var(--white-color); }
 
-.edit-fab { position: fixed; bottom: 2rem; left: 2rem; width: 60px; height: 60px; background: var(--first-color); color: var(--black-color); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.5); border: none; cursor: pointer; transition: transform 0.3s; }
-.edit-fab:hover { transform: scale(1.1); }
+.edit-fab { position: fixed; bottom: 2rem; left: 2rem; width: 60px; height: 60px; background: var(--first-color); color: var(--black-color); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.5); border: none; cursor: pointer; transition: transform 0.3s; animation: floatGear 3s ease-in-out infinite; }
+@keyframes floatGear { 0% {transform: translateY(0px);} 50% {transform: translateY(-8px);} 100% {transform: translateY(0px);} }
 
 .edit-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); z-index: 3000; display: flex; justify-content: center; align-items: center; padding: 1rem; overflow-y: auto; }
 .edit-modal-content { background: var(--container-color); padding: 2rem; border-radius: 1rem; width: 100%; max-width: 500px; border: 1px solid var(--first-color); max-height: 90vh; overflow-y: auto; color: var(--text-color); }
 .edit-modal-content h2 { border-bottom: 1px solid var(--first-color); padding-bottom: 0.5rem; margin-bottom: 1.5rem; color: var(--white-color); }
-.edit-modal-content label { display: block; margin-top: 1rem; margin-bottom: 0.5rem; color: var(--first-color); font-size: var(--small-font-size); text-transform: uppercase; letter-spacing: 1px; }
+.edit-modal-content label { display: block; margin-top: 1.5rem; margin-bottom: 0.5rem; color: var(--first-color); font-size: var(--small-font-size); text-transform: uppercase; letter-spacing: 1px; }
 .edit-input { width: 100%; background: rgba(0,0,0,0.5); border: 1px solid #333; color: var(--white-color); padding: 12px; border-radius: 6px; font-family: var(--body-font); margin-bottom: 0.5rem; }
 .edit-input:focus { border-color: var(--first-color); }
 .edit-textarea { width: 100%; background: rgba(0,0,0,0.5); border: 1px solid #333; color: var(--white-color); padding: 12px; border-radius: 6px; font-family: var(--body-font); margin-bottom: 1rem; resize: vertical; min-height: 80px; }
@@ -322,14 +322,15 @@ img { display: block; max-width: 100%; height: auto; }
          <div class="edit-modal-content">
             <h2>Edit Profile</h2>
             
-            <!-- NEW AVATAR & VCF FIELDS -->
-            <label>Avatar Image URL</label>
-            <input type="text" id="edit-avatar" class="edit-input" placeholder="Paste image link here (e.g., Imgur/Drive)">
-
-            <label>vCard Download Link</label>
+            <!-- NEW: Real File Upload for Avatar -->
+            <label>Upload Profile Photo</label>
+            <input type="file" id="edit-avatar-file" class="edit-input" accept="image/*" style="padding: 8px; background: rgba(0,0,0,0.2);">
+            <input type="hidden" id="edit-avatar-base64">
+            <img id="avatar-preview" src="" style="width: 90px; height: 90px; display: none; border-radius: 12px; margin-top: 10px; border: 2px solid var(--first-color); object-fit: cover;">
+            
+            <label>vCard Download Link (Google Drive)</label>
             <input type="text" id="edit-vcf" class="edit-input" placeholder="Paste .vcf file link here">
 
-            <!-- EXISTING FIELDS -->
             <label>Bio / Description</label>
             <textarea id="edit-desc" class="edit-textarea" placeholder="Enter your bio..."></textarea>
             
@@ -394,7 +395,8 @@ img { display: block; max-width: 100%; height: auto; }
                
                <div class="home__image">
                   <div class="blob-big"></div>
-                  <img src="profile-image.jpg" alt="Home" class="home__img" id="hero-image">
+                  <!-- ID fixed to hero-image to prevent javascript crashes -->
+                  <img src="profile-image.jpg" alt="Home" class="home__img" id="hero-image" onerror="this.src='https://via.placeholder.com/300/141414/c90000?text=Upload+Photo'">
                   
                   <div class="home__circle">
                      <div class="home__text-circular">EXPLORE - MORE - LET'S - </div>
@@ -422,10 +424,9 @@ img { display: block; max-width: 100%; height: auto; }
             </div>
          </section>
 
-         <!--==================== WORK SECTION (CONVERTED TO GRID) ====================-->
+         <!--==================== WORK SECTION ====================-->
          <section class="work section" id="work">
             <h2 class="section__title">View My <span>Work</span></h2>
-            
             <div class="work__container container" id="projects-wrapper">
                <!-- Dynamic projects inject here -->
             </div>
@@ -512,10 +513,7 @@ img { display: block; max-width: 100%; height: auto; }
             
             <div class="contact__container container">
                <div class="contact__links" id="contact-links-wrapper">
-                  <a href="#" class="button" target="_blank">LinkedIn <i class="ri-linkedin-box-fill"></i></a>
-                  <a href="#" class="button" target="_blank">GitHub <i class="ri-github-fill"></i></a>
-                  <a href="#" class="button" target="_blank">Twitter <i class="ri-twitter-x-line"></i></a>
-                  <a href="#" class="button" target="_blank">Instagram <i class="ri-instagram-line"></i></a>
+                  <!-- Dynamic Links and Save Contact Inject Here -->
                </div>
             </div>
          </section>
@@ -554,87 +552,40 @@ img { display: block; max-width: 100%; height: auto; }
       <!--=============== MAIN JS ===============-->
       <script>
 /*=============== SHOW & CLOSE MENU ===============*/
-const navMenu = document.getElementById('nav-menu'),
-      navToggle = document.getElementById('nav-toggle'),
-      navClose = document.getElementById('nav-close')
-
+const navMenu = document.getElementById('nav-menu'), navToggle = document.getElementById('nav-toggle'), navClose = document.getElementById('nav-close')
 if(navToggle){ navToggle.addEventListener('click', () => { navMenu.classList.add('show-menu') }) }
 if(navClose){ navClose.addEventListener('click', () => { navMenu.classList.remove('show-menu') }) }
-
-const navLink = document.querySelectorAll('.nav__link, .nav__contact')
-const linkAction = () =>{
-   const navMenu = document.getElementById('nav-menu')
-   navMenu.classList.remove('show-menu')
-}
+const navLink = document.querySelectorAll('.nav__link, .nav__contact'); const linkAction = () =>{ const navMenu = document.getElementById('nav-menu'); navMenu.classList.remove('show-menu'); }
 navLink.forEach(n => n.addEventListener('click', linkAction))
 
 /*=============== CHANGE HEADER STYLES ===============*/
-const scrollHeader = () =>{
-    const header = document.getElementById('header')
-    this.scrollY >= 50 ? header.classList.add('scroll-header') : header.classList.remove('scroll-header')
-}
+const scrollHeader = () =>{ const header = document.getElementById('header'); this.scrollY >= 50 ? header.classList.add('scroll-header') : header.classList.remove('scroll-header'); }
 window.addEventListener('scroll', scrollHeader)
 
 /*=============== CUSTOM CURSOR ===============*/
 const cursor = document.getElementById('cursor');
-document.addEventListener('mousemove', e => {
-   cursor.style.left = e.clientX + 'px';
-   cursor.style.top = e.clientY + 'px';
-});
+document.addEventListener('mousemove', e => { cursor.style.left = e.clientX + 'px'; cursor.style.top = e.clientY + 'px'; });
 const links = document.querySelectorAll('a, button, .nav__link');
-links.forEach(link => {
-   link.addEventListener('mouseenter', () => cursor.classList.add('cursor-active'));
-   link.addEventListener('mouseleave', () => cursor.classList.remove('cursor-active'));
-});
+links.forEach(link => { link.addEventListener('mouseenter', () => cursor.classList.add('cursor-active')); link.addEventListener('mouseleave', () => cursor.classList.remove('cursor-active')); });
 
 /*=============== HOME TEXT CIRCULAR ===============*/
 const text = document.querySelector('.home__text-circular');
-if (text) {
-   text.innerHTML = text.innerText.split('').map((char, i) =>
-      `<span style="transform:rotate(${i * 12}deg)">${char}</span>`
-   ).join('');
-}
+if (text) { text.innerHTML = text.innerText.split('').map((char, i) => `<span style="transform:rotate(${i * 12}deg)">${char}</span>`).join(''); }
 
 /*=============== HOME TYPED JS ===============*/
-if (document.getElementById('home-typed')) {
-   new Typed('#home-typed', {
-      strings: ['Web Developer', 'Freelancer', 'Designer'],
-      typeSpeed: 50,
-      backSpeed: 50,
-      loop: true
-   });
-}
+if (document.getElementById('home-typed')) { new Typed('#home-typed', { strings: ['Web Developer', 'Freelancer', 'Designer'], typeSpeed: 50, backSpeed: 50, loop: true }); }
 
 /*=============== SCROLL SECTIONS ACTIVE LINK ===============*/
 const sections = document.querySelectorAll('section[id]')
-const scrollActive = () =>{
-   const scrollDown = window.scrollY
-   sections.forEach(current =>{
-      const sectionHeight = current.offsetHeight,
-            sectionTop = current.offsetTop - 58,
-            sectionId = current.getAttribute('id'),
-            sectionsClass = document.querySelector('.nav__menu a[href*=' + sectionId + ']')
-
-      if (sectionsClass) {
-         if(scrollDown > sectionTop && scrollDown <= sectionTop + sectionHeight){
-            sectionsClass.classList.add('active-link')
-         }else{
-            sectionsClass.classList.remove('active-link')
-         }
-      }
-   })
-}
+const scrollActive = () =>{ const scrollDown = window.scrollY; sections.forEach(current =>{ const sectionHeight = current.offsetHeight, sectionTop = current.offsetTop - 58, sectionId = current.getAttribute('id'), sectionsClass = document.querySelector('.nav__menu a[href*=' + sectionId + ']'); if (sectionsClass) { if(scrollDown > sectionTop && scrollDown <= sectionTop + sectionHeight){ sectionsClass.classList.add('active-link') }else{ sectionsClass.classList.remove('active-link') } } }) }
 window.addEventListener('scroll', scrollActive)
 
 /*=============== SHOW SCROLL UP ===============*/ 
-const scrollUp = () =>{
-   const scrollUp = document.getElementById('scroll-up')
-   this.scrollY >= 350 ? scrollUp.classList.add('show-scroll') : scrollUp.classList.remove('show-scroll')
-}
+const scrollUp = () =>{ const scrollUp = document.getElementById('scroll-up'); this.scrollY >= 350 ? scrollUp.classList.add('show-scroll') : scrollUp.classList.remove('show-scroll'); }
 window.addEventListener('scroll', scrollUp)
       </script>
 
-      <!--==================== FIREBASE DATABASE CONNECTION ====================-->
+      <!--==================== FIREBASE & DYNAMIC LOGIC ====================-->
       <script type="module">
          import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
          import { getAuth, signInWithRedirect, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
@@ -673,7 +624,35 @@ window.addEventListener('scroll', scrollUp)
          const publicProjects = document.getElementById('projects-wrapper');
          const publicLinks = document.getElementById('contact-links-wrapper');
 
-         // 1. Check Auth State & Trigger Database Load
+         // 1. Image Upload & Compression Logic (Client-Side to Base64)
+         document.getElementById('edit-avatar-file').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(event) {
+               const img = new Image();
+               img.onload = function() {
+                  const canvas = document.createElement('canvas');
+                  const MAX_WIDTH = 400; // Compress image width
+                  const scaleSize = MAX_WIDTH / img.width;
+                  canvas.width = MAX_WIDTH;
+                  canvas.height = img.height * scaleSize;
+                  
+                  const ctx = canvas.getContext('2d');
+                  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                  
+                  const dataUrl = canvas.toDataURL('image/jpeg', 0.85); // 85% quality JPG
+                  document.getElementById('edit-avatar-base64').value = dataUrl;
+                  document.getElementById('avatar-preview').src = dataUrl;
+                  document.getElementById('avatar-preview').style.display = 'block';
+               }
+               img.src = event.target.result;
+            }
+            reader.readAsDataURL(file);
+         });
+
+         // 2. Check Auth State & Trigger Database Load
          onAuthStateChanged(auth, (user) => {
             if (user) {
                currentUserUid = user.uid; 
@@ -682,49 +661,44 @@ window.addEventListener('scroll', scrollUp)
             loadProfileData(); 
          });
 
-         // 2. Fetch Database Content
+         // 3. Fetch Database Content
          async function loadProfileData() {
             try {
                const q = query(collection(db, "DigitalCard"), where("name", "==", userSlug));
                const querySnapshot = await getDocs(q);
        
                if (querySnapshot.empty) {
-                  // NEW LOGIC: Prevent the login loop
                   if (currentUserUid) {
-                      // User just logged in to claim this empty slot
+                      // Claimed an empty card: Load defaults & show public view first
                       loader.style.display = 'none';
                       setupScreen.style.display = 'none';
                       mainHeader.style.display = 'block';
                       mainContent.style.display = 'block';
                       mainFooter.style.display = 'block';
+                      editFab.style.display = 'flex'; // Show floating gear
                       
-                      // Inject fallback data so the background UI doesn't break
                       publicProjects.innerHTML = `
                         <article class="work__card">
                            <a href="#" class="work__link">
-                              <img src="work-img-1.png" alt="Work" class="work__img" onerror="this.src='https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80'">
+                              <img src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80" alt="Work" class="work__img">
                               <i class="ri-arrow-right-up-line work__icon"></i>
                            </a>
                            <h3 class="work__number">01</h3>
                            <h2 class="work__name">Sample Project</h2>
-                           <p class="work__description">Add your first project via the Admin Settings gear.</p>
+                           <p class="work__description">Tap the floating settings gear to edit this layout.</p>
                         </article>
                      `;
                       addAdminProject(); 
                       addAdminLink();
                       
-                      // Initialize animations for the background
+                      // Trigger animations
                       const sr = ScrollReveal({ origin: 'top', distance: '60px', duration: 1200, delay: 150 });
                       sr.reveal(`.home__content, .services__container, .skills__container, .footer__container`);
                       sr.reveal(`.home__image, .about__data, .contact__container`, {origin: 'right'});
                       sr.reveal(`.about__title`, {origin: 'left'});
                       sr.reveal(`.work__card`, {interval: 100}); 
-
-                      // Automatically pop open the editor so they can save their profile
-                      editModal.style.display = 'flex';
-                      
                   } else {
-                      // Empty card and NOT logged in -> show Setup Screen
+                      // Not logged in, completely empty card: Show Setup Screen
                       loader.style.display = 'none';
                       setupScreen.style.display = 'flex';
                   }
@@ -739,9 +713,13 @@ window.addEventListener('scroll', scrollUp)
                       editFab.style.display = 'flex';
                   }
                   
+                  // Inject Image Safely
                   if (data.avatar) {
-                     document.querySelector('.avatar').src = data.avatar;
-                     document.getElementById('edit-avatar').value = data.avatar;
+                     document.getElementById('hero-image').src = data.avatar;
+                     // Keep base64 stored so it isn't erased if user saves without re-uploading
+                     document.getElementById('edit-avatar-base64').value = data.avatar;
+                     document.getElementById('avatar-preview').src = data.avatar;
+                     document.getElementById('avatar-preview').style.display = 'block';
                   }
                   if (data.description) {
                      document.getElementById('hero-description').innerText = data.description;
@@ -749,10 +727,10 @@ window.addEventListener('scroll', scrollUp)
                      document.getElementById('edit-desc').value = data.description;
                   }
                   if (data.vcf) {
-                      document.body.innerHTML = document.body.innerHTML.replace('YOUR_CARD_FILE_LINK', data.vcf);
                       document.getElementById('edit-vcf').value = data.vcf;
                   }
                   
+                  // Inject Projects
                   publicProjects.innerHTML = '';
                   editProjects.innerHTML = ''; 
                   if (data.projects && data.projects.length > 0) {
@@ -761,7 +739,7 @@ window.addEventListener('scroll', scrollUp)
                            projEl.className = 'work__card';
                            projEl.innerHTML = `
                               <a href="${proj.link || '#'}" class="work__link" target="${proj.link ? '_blank' : ''}">
-                                 <img src="work-img-1.png" alt="Work" class="work__img" onerror="this.src='https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80'">
+                                 <img src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80" alt="Work" class="work__img">
                                  <i class="ri-arrow-right-up-line work__icon"></i>
                               </a>
                               <h3 class="work__number">0${index + 1}</h3>
@@ -775,19 +753,26 @@ window.addEventListener('scroll', scrollUp)
                      publicProjects.innerHTML = `
                         <article class="work__card">
                            <a href="#" class="work__link">
-                              <img src="work-img-1.png" alt="Work" class="work__img" onerror="this.src='https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80'">
+                              <img src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80" alt="Work" class="work__img">
                               <i class="ri-arrow-right-up-line work__icon"></i>
                            </a>
                            <h3 class="work__number">01</h3>
                            <h2 class="work__name">Sample Project</h2>
-                           <p class="work__description">Add your first project via the Admin Settings gear.</p>
+                           <p class="work__description">Tap the floating settings gear to edit this layout.</p>
                         </article>
                      `;
                      addAdminProject(); 
                   }
 
+                  // Inject Links safely (No more replacing the document body)
                   publicLinks.innerHTML = '';
                   editLinks.innerHTML = ''; 
+                  
+                  // Add the dynamic Save Contact button first if the link exists
+                  if (data.vcf) {
+                     publicLinks.innerHTML += `<a href="${data.vcf}" class="button" style="background-color: var(--white-color); color: var(--black-color);" target="_blank">Save Contact <i class="ri-contacts-book-2-line"></i></a>`;
+                  }
+
                   if (data.links && data.links.length > 0) {
                      data.links.forEach(link => {
                            publicLinks.innerHTML += `<a href="${link.url}" class="button" target="_blank">${link.label} <i class="ri-arrow-right-up-line"></i></a>`;
@@ -797,12 +782,14 @@ window.addEventListener('scroll', scrollUp)
                      addAdminLink(); 
                   }
 
+                  // Reveal the public UI
                   loader.style.display = 'none';
                   setupScreen.style.display = 'none';
                   mainHeader.style.display = 'block';
                   mainContent.style.display = 'block';
                   mainFooter.style.display = 'block';
 
+                  // Fire Animations
                   const sr = ScrollReveal({ origin: 'top', distance: '60px', duration: 1200, delay: 150 });
                   sr.reveal(`.home__content, .services__container, .skills__container, .footer__container`);
                   sr.reveal(`.home__image, .about__data, .contact__container`, {origin: 'right'});
@@ -815,12 +802,12 @@ window.addEventListener('scroll', scrollUp)
             }
          }
 
-         // 3. Login Triggers
+         // 4. Login Triggers
          const triggerLogin = () => signInWithRedirect(auth, provider);
          document.getElementById('setup-login-btn').addEventListener('click', triggerLogin);
          document.getElementById('footer-login').addEventListener('click', (e) => { e.preventDefault(); triggerLogin(); });
 
-         // 4. Admin Modal Logic
+         // 5. Admin Modal Form Logic
          window.removeRow = function(el) { el.parentElement.remove(); };
 
          function addAdminProject(title = '', desc = '', link = '') {
@@ -852,13 +839,13 @@ window.addEventListener('scroll', scrollUp)
          editFab.addEventListener('click', () => editModal.style.display = 'flex');
          document.getElementById('edit-close-btn').addEventListener('click', () => editModal.style.display = 'none');
 
-         // 5. Save Changes to Firestore
+         // 6. Save Changes to Firestore
          document.getElementById('edit-save-btn').addEventListener('click', async () => {
             const btn = document.getElementById('edit-save-btn');
             btn.innerText = "Saving...";
 
             const description = document.getElementById('edit-desc').value;
-            const avatar = document.getElementById('edit-avatar').value;
+            const avatar = document.getElementById('edit-avatar-base64').value; // Grabs the base64 string
             const vcf = document.getElementById('edit-vcf').value;
             
             const projects = [];
