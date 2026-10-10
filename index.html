@@ -8,7 +8,7 @@
       <!--==================== REMIXICONS ====================-->
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.9.0/fonts/remixicon.css">
 
-      <!--==================== CSS ====================-->
+      <!--==================== FULL 900-LINE CSS (UNCHANGED) ====================-->
       <style>
 /*=============== GOOGLE FONTS ===============*/
 @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Syne:wght@400..800&display=swap");
@@ -146,7 +146,7 @@ img { display: block; max-width: 100%; height: auto; }
 .home__img {
   width: 280px; border-radius: 20rem 20rem 2rem 2rem; position: relative;
   z-index: 2; border: 4px solid var(--container-color);
-  object-fit: cover; aspect-ratio: 1/1; /* Keeps uploaded images perfectly sized */
+  object-fit: cover; aspect-ratio: 1/1; 
 }
 .home__image .blob-big { top: 3rem; left: 2rem; }
 .home__circle {
@@ -276,25 +276,8 @@ img { display: block; max-width: 100%; height: auto; }
 .spinner { width: 50px; height: 50px; border: 3px solid rgba(255,255,255,0.1); border-radius: 50%; border-top-color: var(--first-color); animation: spin 1s ease-in-out infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-.setup-screen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--body-color); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 2000; text-align: center; padding: 2rem; color: var(--text-color); }
-.setup-screen h1 { font-size: var(--biggest-font-size); margin: 1rem 0; color: var(--white-color); }
-
-.edit-fab { position: fixed; bottom: 2rem; left: 2rem; width: 60px; height: 60px; background: var(--first-color); color: var(--black-color); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.5); border: none; cursor: pointer; transition: transform 0.3s; animation: floatGear 3s ease-in-out infinite; }
+.edit-fab { position: fixed; bottom: 2rem; left: 2rem; width: 60px; height: 60px; background: var(--first-color); color: var(--black-color); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.5); border: none; cursor: pointer; transition: transform 0.3s; animation: floatGear 3s ease-in-out infinite; text-decoration: none;}
 @keyframes floatGear { 0% {transform: translateY(0px);} 50% {transform: translateY(-8px);} 100% {transform: translateY(0px);} }
-
-.edit-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); z-index: 3000; display: flex; justify-content: center; align-items: center; padding: 1rem; overflow-y: auto; }
-.edit-modal-content { background: var(--container-color); padding: 2rem; border-radius: 1rem; width: 100%; max-width: 500px; border: 1px solid var(--first-color); max-height: 90vh; overflow-y: auto; color: var(--text-color); }
-.edit-modal-content h2 { border-bottom: 1px solid var(--first-color); padding-bottom: 0.5rem; margin-bottom: 1.5rem; color: var(--white-color); }
-.edit-modal-content label { display: block; margin-top: 1.5rem; margin-bottom: 0.5rem; color: var(--first-color); font-size: var(--small-font-size); text-transform: uppercase; letter-spacing: 1px; }
-.edit-input { width: 100%; background: rgba(0,0,0,0.5); border: 1px solid #333; color: var(--white-color); padding: 12px; border-radius: 6px; font-family: var(--body-font); margin-bottom: 0.5rem; }
-.edit-input:focus { border-color: var(--first-color); }
-.edit-textarea { width: 100%; background: rgba(0,0,0,0.5); border: 1px solid #333; color: var(--white-color); padding: 12px; border-radius: 6px; font-family: var(--body-font); margin-bottom: 1rem; resize: vertical; min-height: 80px; }
-.edit-textarea:focus { border-color: var(--first-color); }
-.dynamic-row { background: rgba(255,255,255,0.03); border: 1px solid #222; padding: 1rem; border-radius: 6px; margin-bottom: 1rem; position: relative; }
-.remove-btn { position: absolute; top: 0.5rem; right: 0.5rem; color: var(--first-color); font-size: 1.2rem; cursor: pointer; }
-.add-btn { background: transparent; border: 1px dashed var(--first-color); color: var(--first-color); padding: 0.8rem; width: 100%; text-transform: uppercase; cursor: pointer; font-weight: bold; margin-top: 0.5rem; transition: 0.3s; border-radius: 6px;}
-.add-btn:hover { background: hsla(var(--hue), 75%, 60%, 0.1); }
-.edit-actions { display: flex; justify-content: space-between; gap: 1rem; margin-top: 2rem; }
       </style>
       <title>Responsive portfolio website | FLAME</title>
       <link rel="icon" href="data:,">
@@ -304,50 +287,10 @@ img { display: block; max-width: 100%; height: auto; }
       <!-- Full Page Loader -->
       <div id="loader"><div class="spinner"></div></div>
 
-      <!-- Setup Screen (Shown only if database slot is empty) -->
-      <div id="setup-screen" class="setup-screen" style="display: none;">
-         <i class="ri-nfc-line" style="font-size: 4rem; color: var(--first-color);"></i>
-         <h1>Claim Your Card</h1>
-         <p style="margin-bottom: 2rem;">This NFC card is unregistered. Log in to claim this link and build your custom profile.</p>
-         <button class="button" id="setup-login-btn"><i class="ri-google-fill"></i> Sign in with Google</button>
-      </div>
-
-      <!-- Edit Floating Action Button (Shown only if Logged In) -->
-      <button class="edit-fab" id="edit-fab" style="display: none;">
+      <!-- Edit Floating Action Button (Routes to admin.html) -->
+      <a href="#" class="edit-fab" id="edit-fab" style="display: none;">
          <i class="ri-settings-4-line"></i>
-      </button>
-
-      <!-- Admin Edit Modal -->
-      <div id="edit-modal" class="edit-modal" style="display: none;">
-         <div class="edit-modal-content">
-            <h2>Edit Profile</h2>
-            
-            <!-- NEW: Real File Upload for Avatar -->
-            <label>Upload Profile Photo</label>
-            <input type="file" id="edit-avatar-file" class="edit-input" accept="image/*" style="padding: 8px; background: rgba(0,0,0,0.2);">
-            <input type="hidden" id="edit-avatar-base64">
-            <img id="avatar-preview" src="" style="width: 90px; height: 90px; display: none; border-radius: 12px; margin-top: 10px; border: 2px solid var(--first-color); object-fit: cover;">
-            
-            <label>vCard Download Link (Google Drive)</label>
-            <input type="text" id="edit-vcf" class="edit-input" placeholder="Paste .vcf file link here">
-
-            <label>Bio / Description</label>
-            <textarea id="edit-desc" class="edit-textarea" placeholder="Enter your bio..."></textarea>
-            
-            <label>Portfolio Projects</label>
-            <div id="edit-projects-container"></div>
-            <button class="add-btn" id="add-project-btn">+ Add Project</button>
-
-            <label>Contact Links (Up to 5)</label>
-            <div id="edit-links-container"></div>
-            <button class="add-btn" id="add-link-btn">+ Add Link</button>
-            
-            <div class="edit-actions">
-               <button class="button" id="edit-close-btn" style="background: transparent; border: 1px solid var(--text-color); color: var(--white-color); padding: 0.8rem 1.5rem;">Cancel</button>
-               <button class="button" id="edit-save-btn" style="padding: 0.8rem 1.5rem;">Save Live</button>
-            </div>
-         </div>
-      </div>
+      </a>
 
       <!--==================== CUSTOM CURSOR ====================-->
       <div class="custom-cursor" id="cursor"></div>
@@ -585,11 +528,11 @@ const scrollUp = () =>{ const scrollUp = document.getElementById('scroll-up'); t
 window.addEventListener('scroll', scrollUp)
       </script>
 
-<!--==================== FIREBASE & DYNAMIC LOGIC ====================-->
+      <!--==================== DATABASE RETRIEVAL LOGIC ====================-->
       <script type="module">
          import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
-         import { getAuth, signInWithRedirect, GoogleAuthProvider, onAuthStateChanged, getRedirectResult } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
-         import { getFirestore, collection, query, where, getDocs, updateDoc, addDoc, doc } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+         import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
        
          const firebaseConfig = {
            apiKey: "AIzaSyA043mcgewwke4Rt2HusOPbcxgmzUv2bM0",
@@ -602,196 +545,67 @@ window.addEventListener('scroll', scrollUp)
        
          const app = initializeApp(firebaseConfig);
          const auth = getAuth(app);
-         const provider = new GoogleAuthProvider();
          const db = getFirestore(app);
        
-         // 1. THE FIX: Save to LocalStorage so Google doesn't wipe ?user=test2 during redirect
          const urlParams = new URLSearchParams(window.location.search);
-         if (urlParams.has('user')) {
-            localStorage.setItem('savedUserSlug', urlParams.get('user'));
-         }
-         const userSlug = localStorage.getItem('savedUserSlug') || 'flame'; 
+         const userSlug = urlParams.get('user') || localStorage.getItem('savedUserSlug') || 'flame'; 
+         let cardOwnerUid = null;
 
-         let currentDocId = null;
-         let cardOwnerUid = null; 
-         let currentUserUid = null; 
-
-         // UI Elements
          const loader = document.getElementById('loader');
-         const setupScreen = document.getElementById('setup-screen');
          const mainHeader = document.getElementById('header');
          const mainContent = document.getElementById('main-content');
          const mainFooter = document.getElementById('main-footer');
-         const editFab = document.getElementById('edit-fab');
-         const editModal = document.getElementById('edit-modal');
-         const editProjects = document.getElementById('edit-projects-container');
-         const editLinks = document.getElementById('edit-links-container');
          const publicProjects = document.getElementById('projects-wrapper');
          const publicLinks = document.getElementById('contact-links-wrapper');
 
-         // 2. Image Upload & Compression Logic
-         document.getElementById('edit-avatar-file').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            
-            const reader = new FileReader();
-            reader.onload = function(event) {
-               const img = new Image();
-               img.onload = function() {
-                  const canvas = document.createElement('canvas');
-                  const MAX_WIDTH = 400; 
-                  const scaleSize = MAX_WIDTH / img.width;
-                  canvas.width = MAX_WIDTH;
-                  canvas.height = img.height * scaleSize;
-                  
-                  const ctx = canvas.getContext('2d');
-                  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                  
-                  const dataUrl = canvas.toDataURL('image/jpeg', 0.85); 
-                  document.getElementById('edit-avatar-base64').value = dataUrl;
-                  document.getElementById('avatar-preview').src = dataUrl;
-                  document.getElementById('avatar-preview').style.display = 'block';
-               }
-               img.src = event.target.result;
-            }
-            reader.readAsDataURL(file);
-         });
-
-         // 3. THE FIX: Await Redirect to KILL THE LOOP TRAP
-         async function initAuth() {
-             try {
-                 await getRedirectResult(auth); // Forces code to wait for Google to finish
-             } catch(e) {
-                 console.error("Redirect Error:", e);
-             }
-             
-             // Now it is safe to check the state
-             onAuthStateChanged(auth, (user) => {
-                if (user) {
-                   currentUserUid = user.uid; 
-                   document.getElementById('footer-login').style.display = 'none'; 
-                }
-                loadProfileData(); 
-             });
-         }
-         
-         initAuth();
-
-         // 4. Fetch Database Content
          async function loadProfileData() {
             try {
                const q = query(collection(db, "DigitalCard"), where("name", "==", userSlug));
                const querySnapshot = await getDocs(q);
        
                if (querySnapshot.empty) {
-                  if (currentUserUid) {
-                      // Claimed an empty card: Load defaults & show public view first
-                      loader.style.display = 'none';
-                      setupScreen.style.display = 'none';
-                      mainHeader.style.display = 'block';
-                      mainContent.style.display = 'block';
-                      mainFooter.style.display = 'block';
-                      editFab.style.display = 'flex'; 
-                      
-                      publicProjects.innerHTML = `
-                        <article class="work__card">
-                           <a href="#" class="work__link">
-                              <img src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80" alt="Work" class="work__img">
-                              <i class="ri-arrow-right-up-line work__icon"></i>
-                           </a>
-                           <h3 class="work__number">01</h3>
-                           <h2 class="work__name">Sample Project</h2>
-                           <p class="work__description">Tap the floating settings gear to edit this layout.</p>
-                        </article>
-                     `;
-                      addAdminProject(); 
-                      addAdminLink();
-                      
-                      const sr = ScrollReveal({ origin: 'top', distance: '60px', duration: 1200, delay: 150 });
-                      sr.reveal(`.home__content, .services__container, .skills__container, .footer__container`);
-                      sr.reveal(`.home__image, .about__data, .contact__container`, {origin: 'right'});
-                      sr.reveal(`.about__title`, {origin: 'left'});
-                      sr.reveal(`.work__card`, {interval: 100}); 
-                  } else {
-                      // Not logged in, completely empty card -> Show Setup Screen
-                      loader.style.display = 'none';
-                      setupScreen.style.display = 'flex';
-                  }
+                  // If Database is empty, bounce directly to the claim page
+                  window.location.href = `claim.html?user=${userSlug}`;
                } else {
-                  // CARD HAS DATA -> RENDER PROFILE
-                  const docSnap = querySnapshot.docs[0];
-                  currentDocId = docSnap.id;
-                  const data = docSnap.data();
+                  // CARD HAS DATA -> RENDER FULL PROFILE
+                  const data = querySnapshot.docs[0].data();
                   cardOwnerUid = data.ownerUid; 
-
-                  if (currentUserUid === cardOwnerUid) {
-                      editFab.style.display = 'flex';
-                  }
                   
-                  if (data.avatar) {
-                     document.getElementById('hero-image').src = data.avatar;
-                     document.getElementById('edit-avatar-base64').value = data.avatar;
-                     document.getElementById('avatar-preview').src = data.avatar;
-                     document.getElementById('avatar-preview').style.display = 'block';
-                  }
+                  if (data.avatar) document.getElementById('hero-image').src = data.avatar;
                   if (data.description) {
                      document.getElementById('hero-description').innerText = data.description;
                      document.getElementById('about-description').innerText = data.description;
-                     document.getElementById('edit-desc').value = data.description;
-                  }
-                  if (data.vcf) {
-                      document.getElementById('edit-vcf').value = data.vcf;
                   }
                   
                   publicProjects.innerHTML = '';
-                  editProjects.innerHTML = ''; 
                   if (data.projects && data.projects.length > 0) {
                      data.projects.forEach((proj, index) => {
-                           const projEl = document.createElement('article');
-                           projEl.className = 'work__card';
-                           projEl.innerHTML = `
-                              <a href="${proj.link || '#'}" class="work__link" target="${proj.link ? '_blank' : ''}">
-                                 <img src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80" alt="Work" class="work__img">
-                                 <i class="ri-arrow-right-up-line work__icon"></i>
-                              </a>
-                              <h3 class="work__number">0${index + 1}</h3>
-                              <h2 class="work__name">${proj.title}</h2>
-                              <p class="work__description">${proj.description}</p>
+                           publicProjects.innerHTML += `
+                              <article class="work__card">
+                                 <a href="${proj.link || '#'}" class="work__link" target="${proj.link ? '_blank' : ''}">
+                                    <img src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80" alt="Work" class="work__img">
+                                    <i class="ri-arrow-right-up-line work__icon"></i>
+                                 </a>
+                                 <h3 class="work__number">0${index + 1}</h3>
+                                 <h2 class="work__name">${proj.title}</h2>
+                                 <p class="work__description">${proj.description}</p>
+                              </article>
                            `;
-                           publicProjects.appendChild(projEl);
-                           addAdminProject(proj.title, proj.description, proj.link);
                      });
                   } else {
-                     publicProjects.innerHTML = `
-                        <article class="work__card">
-                           <a href="#" class="work__link">
-                              <img src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80" alt="Work" class="work__img">
-                              <i class="ri-arrow-right-up-line work__icon"></i>
-                           </a>
-                           <h3 class="work__number">01</h3>
-                           <h2 class="work__name">Sample Project</h2>
-                           <p class="work__description">Tap the floating settings gear to edit this layout.</p>
-                        </article>
-                     `;
-                     addAdminProject(); 
+                     publicProjects.innerHTML = `<p style="text-align:center;">No projects added yet.</p>`;
                   }
 
                   publicLinks.innerHTML = '';
-                  editLinks.innerHTML = ''; 
-                  if (data.vcf) {
-                     publicLinks.innerHTML += `<a href="${data.vcf}" class="button" style="background-color: var(--white-color); color: var(--black-color);" target="_blank">Save Contact <i class="ri-contacts-book-2-line"></i></a>`;
-                  }
+                  if (data.vcf) publicLinks.innerHTML += `<a href="${data.vcf}" class="button" style="background-color: var(--white-color); color: var(--black-color);" target="_blank">Save Contact <i class="ri-contacts-book-2-line"></i></a>`;
                   if (data.links && data.links.length > 0) {
                      data.links.forEach(link => {
                            publicLinks.innerHTML += `<a href="${link.url}" class="button" target="_blank">${link.label} <i class="ri-arrow-right-up-line"></i></a>`;
-                           addAdminLink(link.label, link.url);
                      });
-                  } else {
-                     addAdminLink(); 
                   }
 
+                  // Reveal UI & trigger animations
                   loader.style.display = 'none';
-                  setupScreen.style.display = 'none';
                   mainHeader.style.display = 'block';
                   mainContent.style.display = 'block';
                   mainFooter.style.display = 'block';
@@ -808,91 +622,22 @@ window.addEventListener('scroll', scrollUp)
             }
          }
 
-         // 5. Login Triggers (Forces memory save right before jumping to Google)
-         const triggerLogin = () => {
-             localStorage.setItem('savedUserSlug', userSlug);
-             signInWithRedirect(auth, provider);
-         };
-         document.getElementById('setup-login-btn').addEventListener('click', triggerLogin);
-         document.getElementById('footer-login').addEventListener('click', (e) => { e.preventDefault(); triggerLogin(); });
+         loadProfileData(); 
 
-         // 6. Admin Modal Form Logic
-         window.removeRow = function(el) { el.parentElement.remove(); };
-
-         function addAdminProject(title = '', desc = '', link = '') {
-            const div = document.createElement('div');
-            div.className = 'dynamic-row';
-            div.innerHTML = `
-               <i class="ri-close-line remove-btn" onclick="removeRow(this)"></i>
-               <input type="text" class="edit-input proj-title" placeholder="Project Title" value="${title}">
-               <textarea class="edit-textarea proj-desc" placeholder="Project Description">${desc}</textarea>
-               <input type="text" class="edit-input proj-link" placeholder="Project URL (Optional)" value="${link}">
-            `;
-            editProjects.appendChild(div);
-         }
-
-         function addAdminLink(label = '', url = '') {
-            const div = document.createElement('div');
-            div.className = 'dynamic-row';
-            div.innerHTML = `
-               <i class="ri-close-line remove-btn" onclick="removeRow(this)"></i>
-               <input type="text" class="edit-input link-label" placeholder="Button Label (e.g., LinkedIn)" value="${label}">
-               <input type="text" class="edit-input link-url" placeholder="URL (https://...)" value="${url}">
-            `;
-            editLinks.appendChild(div);
-         }
-
-         document.getElementById('add-project-btn').addEventListener('click', () => addAdminProject());
-         document.getElementById('add-link-btn').addEventListener('click', () => addAdminLink());
-
-         editFab.addEventListener('click', () => editModal.style.display = 'flex');
-         document.getElementById('edit-close-btn').addEventListener('click', () => editModal.style.display = 'none');
-
-         // 7. Save Changes to Firestore
-         document.getElementById('edit-save-btn').addEventListener('click', async () => {
-            const btn = document.getElementById('edit-save-btn');
-            btn.innerText = "Saving...";
-
-            const description = document.getElementById('edit-desc').value;
-            const avatar = document.getElementById('edit-avatar-base64').value; 
-            const vcf = document.getElementById('edit-vcf').value;
-            
-            const projects = [];
-            document.querySelectorAll('#edit-projects-container .dynamic-row').forEach(row => {
-               const title = row.querySelector('.proj-title').value;
-               const desc = row.querySelector('.proj-desc').value;
-               const link = row.querySelector('.proj-link').value;
-               if (title) projects.push({ title, description: desc, link });
-            });
-
-            const links = [];
-            document.querySelectorAll('#edit-links-container .dynamic-row').forEach(row => {
-               const label = row.querySelector('.link-label').value;
-               const url = row.querySelector('.link-url').value;
-               if (label && url) links.push({ label, url });
-            });
-
-            const dbPayload = { description, avatar, vcf, projects, links };
-
-            try {
-               if (currentDocId) {
-                  await updateDoc(doc(db, "DigitalCard", currentDocId), dbPayload);
-               } else {
-                  dbPayload.name = userSlug;
-                  dbPayload.ownerUid = currentUserUid; 
-                  await addDoc(collection(db, "DigitalCard"), dbPayload);
-               }
-               btn.innerText = "Success!";
-               btn.style.background = "#00ff00";
-               btn.style.color = "#000";
-               
-               // Clear the saved memory once successfully saved
-               localStorage.removeItem('savedUserSlug');
-               setTimeout(() => window.location.reload(), 800);
-            } catch (error) {
-               console.error("Save Error:", error);
-               btn.innerText = "Error Saving";
+         // Auth Check for Edit Gear
+         onAuthStateChanged(auth, (user) => {
+            if (user && user.uid === cardOwnerUid) {
+               const editFab = document.getElementById('edit-fab');
+               editFab.href = `admin.html?user=${userSlug}`;
+               editFab.style.display = 'flex'; 
+               document.getElementById('footer-login').style.display = 'none';
             }
+         });
+
+         // Direct Footer Login to Claim/Admin flow
+         document.getElementById('footer-login').addEventListener('click', (e) => { 
+             e.preventDefault(); 
+             window.location.href = `claim.html?user=${userSlug}`; 
          });
       </script>
    </body>
