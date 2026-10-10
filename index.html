@@ -549,7 +549,9 @@ window.addEventListener('scroll', scrollUp)
        
          const urlParams = new URLSearchParams(window.location.search);
          const userSlug = urlParams.get('user') || localStorage.getItem('savedUserSlug') || 'flame'; 
+         
          let cardOwnerUid = null;
+         let currentUserUid = null;
 
          const loader = document.getElementById('loader');
          const mainHeader = document.getElementById('header');
@@ -558,18 +560,38 @@ window.addEventListener('scroll', scrollUp)
          const publicProjects = document.getElementById('projects-wrapper');
          const publicLinks = document.getElementById('contact-links-wrapper');
 
+         // THE FIX: This function verifies BOTH variables are loaded before showing the gear
+         function checkAdminGear() {
+             if (currentUserUid && cardOwnerUid && currentUserUid === cardOwnerUid) {
+                 const editFab = document.getElementById('edit-fab');
+                 editFab.href = `admin.html?user=${userSlug}`;
+                 editFab.style.display = 'flex'; 
+                 document.getElementById('footer-login').style.display = 'none';
+             }
+         }
+
+         // 1. Get the current logged-in Google User
+         onAuthStateChanged(auth, (user) => {
+            if (user) {
+               currentUserUid = user.uid;
+               checkAdminGear(); 
+            }
+         });
+
+         // 2. Get the Profile Data from Firestore
          async function loadProfileData() {
             try {
                const q = query(collection(db, "DigitalCard"), where("name", "==", userSlug));
                const querySnapshot = await getDocs(q);
        
                if (querySnapshot.empty) {
-                  // Bounce to Claim page if DB is empty
                   window.location.href = `claim.html?user=${userSlug}`;
                } else {
-                  // DB Has Data -> Build the Profile
                   const data = querySnapshot.docs[0].data();
                   cardOwnerUid = data.ownerUid; 
+                  
+                  // Now that we have the owner ID, run the check again
+                  checkAdminGear();
                   
                   if (data.avatar) document.getElementById('hero-image').src = data.avatar;
                   if (data.description) {
@@ -623,17 +645,6 @@ window.addEventListener('scroll', scrollUp)
 
          loadProfileData(); 
 
-         // Only show the Admin Gear if the active Google User actually owns this card
-         onAuthStateChanged(auth, (user) => {
-            if (user && user.uid === cardOwnerUid) {
-               const editFab = document.getElementById('edit-fab');
-               editFab.href = `admin.html?user=${userSlug}`;
-               editFab.style.display = 'flex'; 
-               document.getElementById('footer-login').style.display = 'none';
-            }
-         });
-
-         // Direct Footer Login to Claim page
          document.getElementById('footer-login').addEventListener('click', (e) => { 
              e.preventDefault(); 
              window.location.href = `claim.html?user=${userSlug}`; 
