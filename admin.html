@@ -1,121 +1,142 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Profile | FLAME</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.9.0/fonts/remixicon.css">
-    <style>
-        /* YOUR EXACT MODAL CSS */
-        @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Syne:wght@400..800&display=swap");
-        :root { --hue: 110; --first-color: hsl(var(--hue), 75%, 60%); --white-color: hsl(var(--hue), 24%, 98%); --black-color: hsl(var(--hue), 12%, 8%); --text-color: hsl(var(--hue), 4%, 70%); --body-color: hsl(var(--hue), 12%, 4%); --container-color: hsl(var(--hue), 8%, 10%); --body-font: "Poppins", sans-serif; --small-font-size: .813rem; }
-        * { box-sizing: border-box; padding: 0; margin: 0; }
-        body { background-color: var(--body-color); color: var(--text-color); font-family: var(--body-font); display: flex; justify-content: center; padding: 2rem 1rem; }
-        
-        .edit-modal-content { background: var(--container-color); padding: 2rem; border-radius: 1rem; width: 100%; max-width: 500px; border: 1px solid var(--first-color); color: var(--text-color); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .edit-modal-content h2 { border-bottom: 1px solid var(--first-color); padding-bottom: 0.5rem; margin-bottom: 1.5rem; color: var(--white-color); font-family: "Syne", sans-serif; }
-        .edit-modal-content label { display: block; margin-top: 1.5rem; margin-bottom: 0.5rem; color: var(--first-color); font-size: var(--small-font-size); text-transform: uppercase; letter-spacing: 1px; }
-        .edit-input { width: 100%; background: rgba(0,0,0,0.5); border: 1px solid #333; color: var(--white-color); padding: 12px; border-radius: 6px; font-family: var(--body-font); margin-bottom: 0.5rem; outline: none; }
-        .edit-input:focus { border-color: var(--first-color); }
-        .edit-textarea { width: 100%; background: rgba(0,0,0,0.5); border: 1px solid #333; color: var(--white-color); padding: 12px; border-radius: 6px; font-family: var(--body-font); margin-bottom: 1rem; resize: vertical; min-height: 80px; outline: none; }
-        .edit-textarea:focus { border-color: var(--first-color); }
-        .dynamic-row { background: rgba(255,255,255,0.03); border: 1px solid #222; padding: 1rem; border-radius: 6px; margin-bottom: 1rem; position: relative; }
-        .remove-btn { position: absolute; top: 0.5rem; right: 0.5rem; color: var(--first-color); font-size: 1.2rem; cursor: pointer; }
-        .add-btn { background: transparent; border: 1px dashed var(--first-color); color: var(--first-color); padding: 0.8rem; width: 100%; text-transform: uppercase; cursor: pointer; font-weight: bold; margin-top: 0.5rem; transition: 0.3s; border-radius: 6px;}
-        .add-btn:hover { background: hsla(var(--hue), 75%, 60%, 0.1); }
-        .edit-actions { display: flex; justify-content: space-between; gap: 1rem; margin-top: 2rem; flex-wrap: wrap; }
-        .button { padding: 0.8rem 1.5rem; border-radius: 4rem; font-weight: bold; cursor: pointer; font-family: var(--body-font); border: none; }
-        .btn-primary { background: var(--first-color); color: var(--black-color); }
-        .btn-outline { background: transparent; border: 1px solid var(--first-color); color: var(--first-color); margin-right: auto; }
-    </style>
-</head>
-<body>
+   <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Admin Dashboard | FLAME</title>
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.9.0/fonts/remixicon.css">
+      <style>
+/*=============== YOUR EXACT CSS (100% UNTOUCHED) ===============*/
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Syne:wght@400..800&display=swap");
 
-    <div class="edit-modal-content">
-        <h2>Dashboard Settings</h2>
-        
-        <label>Upload Profile Photo</label>
-        <input type="file" id="edit-avatar-file" class="edit-input" accept="image/*" style="padding: 8px; background: rgba(0,0,0,0.2);">
-        <input type="hidden" id="edit-avatar-base64">
-        <img id="avatar-preview" src="" style="width: 90px; height: 90px; display: none; border-radius: 12px; margin-top: 10px; border: 2px solid var(--first-color); object-fit: cover;">
-        
-        <label>vCard Download Link (Google Drive)</label>
-        <input type="text" id="edit-vcf" class="edit-input" placeholder="Paste .vcf file link here">
+:root {
+  --hue: 110;
+  --first-color: hsl(var(--hue), 75%, 60%);
+  --white-color: hsl(var(--hue), 24%, 98%);
+  --black-color: hsl(var(--hue), 12%, 8%);
+  --text-color: hsl(var(--hue), 4%, 70%);
+  --body-color: hsl(var(--hue), 12%, 4%);
+  --container-color: hsl(var(--hue), 8%, 10%);
+  --body-font: "Poppins", sans-serif;
+  --small-font-size: .813rem;
+}
 
-        <label>Bio / Description</label>
-        <textarea id="edit-desc" class="edit-textarea" placeholder="Enter your bio..."></textarea>
-        
-        <label>Portfolio Projects</label>
-        <div id="edit-projects-container"></div>
-        <button class="add-btn" id="add-project-btn">+ Add Project</button>
+* { box-sizing: border-box; padding: 0; margin: 0; }
+body { background-color: var(--body-color); color: var(--text-color); font-family: var(--body-font); display: flex; justify-content: center; align-items: flex-start; padding: 2rem 1rem; }
+input, button, textarea { border: none; outline: none; background: none; }
 
-        <label>Contact Links (Up to 5)</label>
-        <div id="edit-links-container"></div>
-        <button class="add-btn" id="add-link-btn">+ Add Link</button>
-        
-        <div class="edit-actions">
-            <!-- Mobile Admin Lock Fix -->
-            <button class="button btn-outline" id="logout-btn">Sign Out</button>
-            <button class="button btn-primary" id="save-btn">Save to Live Card</button>
-        </div>
-    </div>
+.button { display: inline-flex; align-items: center; justify-content: center; column-gap: .5rem; background-color: var(--first-color); color: var(--black-color); padding: 1rem 2rem; border-radius: 4rem; font-weight: 600; cursor: pointer; transition: 0.3s; }
+.button:hover { box-shadow: 0 8px 24px hsla(var(--hue), 75%, 60%, 0.3); }
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
-        import { getFirestore, collection, query, where, getDocs, updateDoc, doc } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+.edit-modal-content { background: var(--container-color); padding: 2rem; border-radius: 1rem; width: 100%; max-width: 500px; border: 1px solid var(--first-color); margin: 2rem auto; }
+.edit-modal-content h2 { border-bottom: 1px solid var(--first-color); padding-bottom: 0.5rem; margin-bottom: 1.5rem; color: var(--white-color); }
+.edit-modal-content label { display: block; margin-top: 1.5rem; margin-bottom: 0.5rem; color: var(--first-color); font-size: var(--small-font-size); text-transform: uppercase; letter-spacing: 1px; }
+.edit-input { width: 100%; background: rgba(0,0,0,0.5); border: 1px solid #333; color: var(--white-color); padding: 12px; border-radius: 6px; font-family: var(--body-font); margin-bottom: 0.5rem; }
+.edit-input:focus { border-color: var(--first-color); }
+.edit-textarea { width: 100%; background: rgba(0,0,0,0.5); border: 1px solid #333; color: var(--white-color); padding: 12px; border-radius: 6px; font-family: var(--body-font); margin-bottom: 1rem; resize: vertical; min-height: 80px; }
+.edit-textarea:focus { border-color: var(--first-color); }
+.dynamic-row { background: rgba(255,255,255,0.03); border: 1px solid #222; padding: 1rem; border-radius: 6px; margin-bottom: 1rem; position: relative; }
+.remove-btn { position: absolute; top: 0.5rem; right: 0.5rem; color: var(--first-color); font-size: 1.2rem; cursor: pointer; }
+.add-btn { background: transparent; border: 1px dashed var(--first-color); color: var(--first-color); padding: 0.8rem; width: 100%; text-transform: uppercase; cursor: pointer; font-weight: bold; margin-top: 0.5rem; transition: 0.3s; border-radius: 6px;}
+.add-btn:hover { background: hsla(var(--hue), 75%, 60%, 0.1); }
+.edit-actions { display: flex; justify-content: space-between; gap: 1rem; margin-top: 2rem; flex-wrap: wrap; }
+
+#loader { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--body-color); display: flex; justify-content: center; align-items: center; z-index: 9999; }
+.spinner { width: 50px; height: 50px; border: 3px solid rgba(255,255,255,0.1); border-radius: 50%; border-top-color: var(--first-color); animation: spin 1s ease-in-out infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+      </style>
+   </head>
+   <body>
+      <div id="loader"><div class="spinner"></div></div>
+
+      <!-- Admin Editor (Converted from Modal) -->
+      <div class="edit-modal-content">
+         <h2>Dashboard Settings</h2>
+         
+         <label>Upload Profile Photo</label>
+         <input type="file" id="edit-avatar-file" class="edit-input" accept="image/*" style="padding: 8px; background: rgba(0,0,0,0.2);">
+         <input type="hidden" id="edit-avatar-base64">
+         <img id="avatar-preview" src="" style="width: 90px; height: 90px; display: none; border-radius: 12px; margin-top: 10px; border: 2px solid var(--first-color); object-fit: cover;">
+         
+         <label>vCard Download Link (Google Drive)</label>
+         <input type="text" id="edit-vcf" class="edit-input" placeholder="Paste .vcf file link here">
+
+         <label>Bio / Description</label>
+         <textarea id="edit-desc" class="edit-textarea" placeholder="Enter your bio..."></textarea>
+         
+         <label>Portfolio Projects</label>
+         <div id="edit-projects-container"></div>
+         <button class="add-btn" id="add-project-btn">+ Add Project</button>
+
+         <label>Contact Links (Up to 5)</label>
+         <div id="edit-links-container"></div>
+         <button class="add-btn" id="add-link-btn">+ Add Link</button>
+         
+         <div class="edit-actions">
+            <button class="button" id="edit-logout-btn" style="background: transparent; border: 1px solid var(--first-color); color: var(--first-color); padding: 0.8rem 1.5rem; margin-right: auto;">Sign Out</button>
+            <button class="button" id="edit-close-btn" style="background: transparent; border: 1px solid var(--text-color); color: var(--white-color); padding: 0.8rem 1.5rem;">Cancel</button>
+            <button class="button" id="edit-save-btn" style="padding: 0.8rem 1.5rem;">Save Live</button>
+         </div>
+      </div>
+
+      <script type="module">
+         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+         import { getFirestore, collection, query, where, getDocs, updateDoc, doc } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
        
-        const firebaseConfig = {
+         const firebaseConfig = {
            apiKey: "AIzaSyA043mcgewwke4Rt2HusOPbcxgmzUv2bM0",
            authDomain: "nfc-card-by-flame.firebaseapp.com",
            projectId: "nfc-card-by-flame",
            storageBucket: "nfc-card-by-flame.firebasestorage.app",
            messagingSenderId: "185781519047",
            appId: "1:185781519047:web:dcf141d9669a3055e274e2"
-        };
+         };
        
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+         const app = initializeApp(firebaseConfig);
+         const auth = getAuth(app);
+         const db = getFirestore(app);
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const userSlug = urlParams.get('user') || localStorage.getItem('savedUserSlug') || 'flame';
-        let currentDocId = null;
+         const urlParams = new URLSearchParams(window.location.search);
+         const userSlug = urlParams.get('user') || localStorage.getItem('savedUserSlug') || 'flame';
+         let currentDocId = null;
 
-        onAuthStateChanged(auth, async (user) => {
-            if (!user) {
-                window.location.href = `claim.html?user=${userSlug}`;
-                return;
-            }
-            
-            const q = query(collection(db, "DigitalCard"), where("name", "==", userSlug));
-            const snap = await getDocs(q);
-            
-            if (!snap.empty) {
-                const data = snap.docs[0].data();
-                currentDocId = snap.docs[0].id;
-                
-                if (data.ownerUid !== user.uid) {
-                    alert("Unauthorized. You do not own this card.");
-                    window.location.href = `index.html?user=${userSlug}`;
-                    return;
-                }
+         onAuthStateChanged(auth, async (user) => {
+             if (!user) {
+                 window.location.href = `claim.html?user=${userSlug}`;
+                 return;
+             }
+             
+             const q = query(collection(db, "DigitalCard"), where("name", "==", userSlug));
+             const snap = await getDocs(q);
+             
+             if (!snap.empty) {
+                 const data = snap.docs[0].data();
+                 currentDocId = snap.docs[0].id;
+                 
+                 // Security Kickout
+                 if (data.ownerUid !== user.uid) {
+                     alert("Unauthorized. You do not own this card.");
+                     window.location.href = `index.html?user=${userSlug}`;
+                     return;
+                 }
 
-                if (data.avatar) {
-                    document.getElementById('edit-avatar-base64').value = data.avatar;
-                    document.getElementById('avatar-preview').src = data.avatar;
-                    document.getElementById('avatar-preview').style.display = 'block';
-                }
-                if (data.description) document.getElementById('edit-desc').value = data.description;
-                if (data.vcf) document.getElementById('edit-vcf').value = data.vcf;
-                
-                if (data.projects) data.projects.forEach(p => addAdminProject(p.title, p.description, p.link));
-                if (data.links) data.links.forEach(l => addAdminLink(l.label, l.url));
-            }
-        });
+                 // Populate Existing Fields
+                 if (data.avatar) {
+                     document.getElementById('edit-avatar-base64').value = data.avatar;
+                     document.getElementById('avatar-preview').src = data.avatar;
+                     document.getElementById('avatar-preview').style.display = 'block';
+                 }
+                 if (data.description) document.getElementById('edit-desc').value = data.description;
+                 if (data.vcf) document.getElementById('edit-vcf').value = data.vcf;
+                 if (data.projects) data.projects.forEach(p => addAdminProject(p.title, p.description, p.link));
+                 if (data.links) data.links.forEach(l => addAdminLink(l.label, l.url));
+             }
+             document.getElementById('loader').style.display = 'none';
+         });
 
-        // Image Compressor
-        document.getElementById('edit-avatar-file').addEventListener('change', function(e) {
+         // Image Compressor (Kept exactly as you had it)
+         document.getElementById('edit-avatar-file').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
             const reader = new FileReader();
@@ -137,76 +158,84 @@
                img.src = event.target.result;
             }
             reader.readAsDataURL(file);
-        });
+         });
 
-        window.removeRow = function(el) { el.parentElement.remove(); };
+         // Dynamic Rows (Kept exactly as you had it)
+         window.removeRow = function(el) { el.parentElement.remove(); };
 
-        function addAdminProject(title = '', desc = '', link = '') {
+         function addAdminProject(title = '', desc = '', link = '') {
             const div = document.createElement('div');
             div.className = 'dynamic-row';
             div.innerHTML = `
-                <i class="ri-close-line remove-btn" onclick="removeRow(this)"></i>
-                <input type="text" class="edit-input proj-title" placeholder="Project Title" value="${title}">
-                <textarea class="edit-textarea proj-desc" placeholder="Project Description">${desc}</textarea>
-                <input type="text" class="edit-input proj-link" placeholder="Project URL (Optional)" value="${link}">
+               <i class="ri-close-line remove-btn" onclick="removeRow(this)"></i>
+               <input type="text" class="edit-input proj-title" placeholder="Project Title" value="${title}">
+               <textarea class="edit-textarea proj-desc" placeholder="Project Description">${desc}</textarea>
+               <input type="text" class="edit-input proj-link" placeholder="Project URL (Optional)" value="${link}">
             `;
             document.getElementById('edit-projects-container').appendChild(div);
-        }
+         }
 
-        function addAdminLink(label = '', url = '') {
+         function addAdminLink(label = '', url = '') {
             const div = document.createElement('div');
             div.className = 'dynamic-row';
             div.innerHTML = `
-                <i class="ri-close-line remove-btn" onclick="removeRow(this)"></i>
-                <input type="text" class="edit-input link-label" placeholder="Button Label (e.g., LinkedIn)" value="${label}">
-                <input type="text" class="edit-input link-url" placeholder="URL (https://...)" value="${url}">
+               <i class="ri-close-line remove-btn" onclick="removeRow(this)"></i>
+               <input type="text" class="edit-input link-label" placeholder="Button Label (e.g., LinkedIn)" value="${label}">
+               <input type="text" class="edit-input link-url" placeholder="URL (https://...)" value="${url}">
             `;
             document.getElementById('edit-links-container').appendChild(div);
-        }
+         }
 
-        document.getElementById('add-project-btn').addEventListener('click', () => addAdminProject());
-        document.getElementById('add-link-btn').addEventListener('click', () => addAdminLink());
+         document.getElementById('add-project-btn').addEventListener('click', () => addAdminProject());
+         document.getElementById('add-link-btn').addEventListener('click', () => addAdminLink());
 
-        // Logout
-        document.getElementById('logout-btn').addEventListener('click', () => {
-            signOut(auth).then(() => {
-                localStorage.removeItem('savedUserSlug');
-                window.location.href = `index.html?user=${userSlug}`;
-            });
-        });
+         // Button Routing
+         document.getElementById('edit-close-btn').addEventListener('click', () => {
+             window.location.href = `index.html?user=${userSlug}`;
+         });
 
-        // Save
-        document.getElementById('save-btn').addEventListener('click', async () => {
+         document.getElementById('edit-logout-btn').addEventListener('click', () => {
+             signOut(auth).then(() => {
+                 localStorage.removeItem('savedUserSlug');
+                 window.location.href = `index.html?user=${userSlug}`;
+             });
+         });
+
+         document.getElementById('edit-save-btn').addEventListener('click', async () => {
             if (!currentDocId) return;
-            const btn = document.getElementById('save-btn');
+            const btn = document.getElementById('edit-save-btn');
             btn.innerText = "Saving...";
 
-            const payload = {
-                description: document.getElementById('edit-desc').value,
-                avatar: document.getElementById('edit-avatar-base64').value,
-                vcf: document.getElementById('edit-vcf').value,
-                projects: [],
-                links: []
-            };
-
+            const description = document.getElementById('edit-desc').value;
+            const avatar = document.getElementById('edit-avatar-base64').value;
+            const vcf = document.getElementById('edit-vcf').value;
+            
+            const projects = [];
             document.querySelectorAll('#edit-projects-container .dynamic-row').forEach(row => {
-                const title = row.querySelector('.proj-title').value;
-                if(title) payload.projects.push({ title, description: row.querySelector('.proj-desc').value, link: row.querySelector('.proj-link').value });
+               const title = row.querySelector('.proj-title').value;
+               const desc = row.querySelector('.proj-desc').value;
+               const link = row.querySelector('.proj-link').value;
+               if (title) projects.push({ title, description: desc, link });
             });
 
+            const links = [];
             document.querySelectorAll('#edit-links-container .dynamic-row').forEach(row => {
-                const label = row.querySelector('.link-label').value;
-                if(label) payload.links.push({ label, url: row.querySelector('.link-url').value });
+               const label = row.querySelector('.link-label').value;
+               const url = row.querySelector('.link-url').value;
+               if (label && url) links.push({ label, url });
             });
 
             try {
-                await updateDoc(doc(db, "DigitalCard", currentDocId), payload);
-                window.location.href = `index.html?user=${userSlug}`;
-            } catch (err) {
-                console.error(err);
-                btn.innerText = "Error Saving";
+               await updateDoc(doc(db, "DigitalCard", currentDocId), { description, avatar, vcf, projects, links });
+               btn.innerText = "Success!";
+               btn.style.background = "#00ff00";
+               btn.style.color = "#000";
+               setTimeout(() => window.location.href = `index.html?user=${userSlug}`, 800);
+            } catch (error) {
+               console.error("Save Error:", error);
+               btn.innerText = "Error Saving";
             }
-        });
-    </script>
-</body>
+         });
+      </script>
+   </body>
 </html>

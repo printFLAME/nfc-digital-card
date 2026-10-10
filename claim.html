@@ -1,82 +1,128 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Claim Your Card | FLAME</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.9.0/fonts/remixicon.css">
-    
-    <!-- YOUR EXACT 900-LINE CSS TO KEEP THE THEME PERFECT -->
-    <style>
-        @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Syne:wght@400..800&display=swap");
-        :root { --header-height: 3.5rem; --hue: 110; --first-color: hsl(var(--hue), 75%, 60%); --white-color: hsl(var(--hue), 24%, 98%); --black-color: hsl(var(--hue), 12%, 8%); --text-color: hsl(var(--hue), 4%, 70%); --body-color: hsl(var(--hue), 12%, 4%); --container-color: hsl(var(--hue), 8%, 10%); --body-font: "Poppins", sans-serif; --second-font: "Syne", sans-serif; --biggest-font-size: 2rem; --normal-font-size: .938rem; }
-        * { box-sizing: border-box; padding: 0; margin: 0; }
-        body { background-color: var(--body-color); color: var(--text-color); font-family: var(--body-font); font-size: var(--normal-font-size); display: flex; justify-content: center; align-items: center; height: 100vh; }
-        h1 { color: var(--white-color); font-family: var(--second-font); font-size: var(--biggest-font-size); margin: 1rem 0; }
-        .button { display: inline-flex; align-items: center; justify-content: center; column-gap: .5rem; background-color: var(--first-color); color: var(--black-color); padding: 1rem 2rem; border-radius: 4rem; font-weight: 600; cursor: pointer; border: none; font-size: 1rem; transition: 0.3s; }
-        .button:hover { box-shadow: 0 8px 24px hsla(var(--hue), 75%, 60%, 0.3); }
-        .setup-screen { text-align: center; padding: 2rem; }
-    </style>
-</head>
-<body>
-    <div class="setup-screen">
-        <i class="ri-nfc-line" style="font-size: 4rem; color: var(--first-color);"></i>
-        <h1>Claim Your Card</h1>
-        <p style="margin-bottom: 2rem;">This NFC card is unregistered. Log in to claim this link and build your custom profile.</p>
-        <button class="button" id="setup-login-btn"><i class="ri-google-fill"></i> Sign in with Google</button>
-    </div>
+   <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Claim Card | FLAME</title>
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.9.0/fonts/remixicon.css">
+      <style>
+/*=============== YOUR EXACT CSS (100% UNTOUCHED) ===============*/
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Syne:wght@400..800&display=swap");
 
-    <!-- LOGIC & LOOP FIX -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
-        import { getAuth, signInWithRedirect, GoogleAuthProvider, getRedirectResult, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
-        import { getFirestore, collection, query, where, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+:root {
+  --header-height: 3.5rem;
+  --hue: 110;
+  --first-color: hsl(var(--hue), 75%, 60%);
+  --white-color: hsl(var(--hue), 24%, 98%);
+  --black-color: hsl(var(--hue), 12%, 8%);
+  --text-color: hsl(var(--hue), 4%, 70%);
+  --body-color: hsl(var(--hue), 12%, 4%);
+  --container-color: hsl(var(--hue), 8%, 10%);
+  --body-font: "Poppins", sans-serif;
+  --second-font: "Syne", sans-serif;
+  --biggest-font-size: 2rem;
+  --bigger-font-size: 1.75rem;
+  --h1-font-size: 1.5rem;
+  --h2-font-size: 1.25rem;
+  --h3-font-size: 1rem;
+  --normal-font-size: .938rem;
+  --small-font-size: .813rem;
+  --font-regular: 400;
+  --font-medium: 500;
+  --font-semi-bold: 600;
+  --z-tooltip: 10;
+  --z-fixed: 100;
+}
+
+@media (width >= 1150px) {
+  :root {
+    --biggest-font-size: 5rem;
+    --bigger-font-size: 3rem;
+    --h1-font-size: 2.25rem;
+    --h2-font-size: 1.5rem;
+    --h3-font-size: 1.25rem;
+    --normal-font-size: 1rem;
+  }
+}
+
+* { box-sizing: border-box; padding: 0; margin: 0; }
+html { scroll-behavior: smooth; }
+body, input, button, textarea, label { font-family: var(--body-font); font-size: var(--normal-font-size); }
+body { background-color: var(--body-color); color: var(--text-color); }
+input, button, textarea { border: none; outline: none; background: none; }
+h1, h2, h3, h4 { color: var(--white-color); font-weight: var(--font-semi-bold); font-family: var(--second-font); }
+
+.button { display: inline-flex; align-items: center; justify-content: center; column-gap: .5rem; background-color: var(--first-color); color: var(--black-color); padding: 1rem 2rem; border-radius: 4rem; font-weight: var(--font-semi-bold); transition: box-shadow 0.4s; cursor: pointer; }
+.button:hover { box-shadow: 0 8px 24px hsla(var(--hue), 75%, 60%, 0.3); }
+
+#loader { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--body-color); display: flex; justify-content: center; align-items: center; z-index: 9999; }
+.spinner { width: 50px; height: 50px; border: 3px solid rgba(255,255,255,0.1); border-radius: 50%; border-top-color: var(--first-color); animation: spin 1s ease-in-out infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.setup-screen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--body-color); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 2000; text-align: center; padding: 2rem; color: var(--text-color); }
+.setup-screen h1 { font-size: var(--biggest-font-size); margin: 1rem 0; color: var(--white-color); }
+      </style>
+   </head>
+   <body>
+      <div id="loader" style="display: none;"><div class="spinner"></div></div>
+
+      <!-- Setup Screen -->
+      <div id="setup-screen" class="setup-screen">
+         <i class="ri-nfc-line" style="font-size: 4rem; color: var(--first-color);"></i>
+         <h1>Claim Your Card</h1>
+         <p style="margin-bottom: 2rem;">This NFC card is unregistered. Log in to claim this link and build your custom profile.</p>
+         <button class="button" id="setup-login-btn"><i class="ri-google-fill"></i> Sign in with Google</button>
+      </div>
+
+      <!-- Logic -->
+      <script type="module">
+         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+         import { getAuth, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+         import { getFirestore, collection, query, where, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
        
-        const firebaseConfig = {
+         const firebaseConfig = {
            apiKey: "AIzaSyA043mcgewwke4Rt2HusOPbcxgmzUv2bM0",
            authDomain: "nfc-card-by-flame.firebaseapp.com",
            projectId: "nfc-card-by-flame",
            storageBucket: "nfc-card-by-flame.firebasestorage.app",
            messagingSenderId: "185781519047",
            appId: "1:185781519047:web:dcf141d9669a3055e274e2"
-        };
+         };
        
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const provider = new GoogleAuthProvider();
-        const db = getFirestore(app);
+         const app = initializeApp(firebaseConfig);
+         const auth = getAuth(app);
+         const provider = new GoogleAuthProvider();
+         const db = getFirestore(app);
 
-        // Memory Fix: Saves "?user=test2" before jumping to Google
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.has('user')) localStorage.setItem('savedUserSlug', urlParams.get('user'));
-        const userSlug = localStorage.getItem('savedUserSlug') || 'flame';
+         // Remember URL Parameter
+         const urlParams = new URLSearchParams(window.location.search);
+         if (urlParams.has('user')) localStorage.setItem('savedUserSlug', urlParams.get('user'));
+         const userSlug = localStorage.getItem('savedUserSlug') || 'flame';
 
-        document.getElementById('setup-login-btn').addEventListener('click', () => {
-            localStorage.setItem('savedUserSlug', userSlug);
-            signInWithRedirect(auth, provider);
-        });
-
-        // Waits for Google to finish, then checks database
-        async function handleAuth() {
-            try { await getRedirectResult(auth); } catch (e) { console.error(e); }
-            
-            onAuthStateChanged(auth, async (user) => {
-                if (user) {
-                    const btn = document.getElementById('setup-login-btn');
-                    btn.innerText = "Setting up...";
-                    
-                    const q = query(collection(db, "DigitalCard"), where("name", "==", userSlug));
-                    const snap = await getDocs(q);
-                    
-                    if (snap.empty) {
-                        // Creates slot, then routes to admin editor
-                        await addDoc(collection(db, "DigitalCard"), { name: userSlug, ownerUid: user.uid });
-                    }
-                    window.location.href = `admin.html?user=${userSlug}`;
-                }
-            });
-        }
-        handleAuth();
-    </script>
-</body>
+         document.getElementById('setup-login-btn').addEventListener('click', async () => {
+             const loader = document.getElementById('loader');
+             try {
+                 loader.style.display = 'flex';
+                 // Popup Auth blocks the PC Loop!
+                 const result = await signInWithPopup(auth, provider); 
+                 const user = result.user;
+                 
+                 const q = query(collection(db, "DigitalCard"), where("name", "==", userSlug));
+                 const snap = await getDocs(q);
+                 
+                 // Create DB if empty
+                 if (snap.empty) {
+                     await addDoc(collection(db, "DigitalCard"), { name: userSlug, ownerUid: user.uid });
+                 }
+                 
+                 // Send them to their profile (default view) first!
+                 window.location.href = `index.html?user=${userSlug}`;
+             } catch (error) {
+                 console.error("Auth Error:", error);
+                 loader.style.display = 'none';
+                 alert("Login failed or popup was blocked.");
+             }
+         });
+      </script>
+   </body>
 </html>

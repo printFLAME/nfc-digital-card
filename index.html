@@ -8,7 +8,7 @@
       <!--==================== REMIXICONS ====================-->
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.9.0/fonts/remixicon.css">
 
-      <!--==================== FULL 900-LINE CSS (UNCHANGED) ====================-->
+      <!--==================== CSS (YOUR ENTIRE UNTOUCHED BLOCK) ====================-->
       <style>
 /*=============== GOOGLE FONTS ===============*/
 @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Syne:wght@400..800&display=swap");
@@ -564,10 +564,10 @@ window.addEventListener('scroll', scrollUp)
                const querySnapshot = await getDocs(q);
        
                if (querySnapshot.empty) {
-                  // If Database is empty, bounce directly to the claim page
+                  // Bounce to Claim page if DB is empty
                   window.location.href = `claim.html?user=${userSlug}`;
                } else {
-                  // CARD HAS DATA -> RENDER FULL PROFILE
+                  // DB Has Data -> Build the Profile
                   const data = querySnapshot.docs[0].data();
                   cardOwnerUid = data.ownerUid; 
                   
@@ -593,7 +593,7 @@ window.addEventListener('scroll', scrollUp)
                            `;
                      });
                   } else {
-                     publicProjects.innerHTML = `<p style="text-align:center;">No projects added yet.</p>`;
+                     publicProjects.innerHTML = `<p style="text-align:center; color:#888;">Add your first project via the Admin Settings gear.</p>`;
                   }
 
                   publicLinks.innerHTML = '';
@@ -604,7 +604,6 @@ window.addEventListener('scroll', scrollUp)
                      });
                   }
 
-                  // Reveal UI & trigger animations
                   loader.style.display = 'none';
                   mainHeader.style.display = 'block';
                   mainContent.style.display = 'block';
@@ -624,7 +623,7 @@ window.addEventListener('scroll', scrollUp)
 
          loadProfileData(); 
 
-         // Auth Check for Edit Gear
+         // Only show the Admin Gear if the active Google User actually owns this card
          onAuthStateChanged(auth, (user) => {
             if (user && user.uid === cardOwnerUid) {
                const editFab = document.getElementById('edit-fab');
@@ -634,7 +633,7 @@ window.addEventListener('scroll', scrollUp)
             }
          });
 
-         // Direct Footer Login to Claim/Admin flow
+         // Direct Footer Login to Claim page
          document.getElementById('footer-login').addEventListener('click', (e) => { 
              e.preventDefault(); 
              window.location.href = `claim.html?user=${userSlug}`; 
