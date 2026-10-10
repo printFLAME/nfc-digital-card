@@ -8,7 +8,7 @@
       <style>
 /*=============== YOUR EXACT CSS (100% UNTOUCHED) ===============*/
 @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Syne:wght@400..800&display=swap");
-:root { --hue: 110; --first-color: hsl(var(--hue), 75%, 60%); --white-color: hsl(var(--hue), 24%, 98%); --black-color: hsl(var(--hue), 12%, 8%); --text-color: hsl(var(--hue), 4%, 70%); --body-color: hsl(var(--hue), 12%, 4%); --container-color: hsl(var(--hue), 8%, 10%); --body-font: "Poppins", sans-serif; --small-font-size: .813rem; }
+:root { --header-height: 3.5rem; --hue: 110; --first-color: hsl(var(--hue), 75%, 60%); --white-color: hsl(var(--hue), 24%, 98%); --black-color: hsl(var(--hue), 12%, 8%); --text-color: hsl(var(--hue), 4%, 70%); --body-color: hsl(var(--hue), 12%, 4%); --container-color: hsl(var(--hue), 8%, 10%); --body-font: "Poppins", sans-serif; --small-font-size: .813rem; }
 * { box-sizing: border-box; padding: 0; margin: 0; }
 body { background-color: var(--body-color); color: var(--text-color); font-family: var(--body-font); display: flex; justify-content: center; align-items: flex-start; padding: 2rem 1rem; }
 input, button, textarea { border: none; outline: none; background: none; }
@@ -84,7 +84,14 @@ input, button, textarea { border: none; outline: none; background: none; }
          const db = getFirestore(app);
 
          const urlParams = new URLSearchParams(window.location.search);
-         const userSlug = urlParams.get('user') || localStorage.getItem('savedUserSlug') || 'flame';
+         let userSlug = urlParams.get('user');
+         if (userSlug) sessionStorage.setItem('savedUserSlug', userSlug);
+         else userSlug = sessionStorage.getItem('savedUserSlug');
+
+         if (!userSlug) {
+             window.location.href = 'index.html';
+         }
+
          let currentDocId = null;
 
          onAuthStateChanged(auth, async (user) => {
@@ -178,7 +185,7 @@ input, button, textarea { border: none; outline: none; background: none; }
 
          document.getElementById('edit-logout-btn').addEventListener('click', () => {
              signOut(auth).then(() => {
-                 localStorage.removeItem('savedUserSlug');
+                 sessionStorage.removeItem('savedUserSlug');
                  window.location.href = `index.html?user=${userSlug}`;
              });
          });

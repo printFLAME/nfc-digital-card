@@ -547,9 +547,31 @@ window.addEventListener('scroll', scrollUp)
          const auth = getAuth(app);
          const db = getFirestore(app);
        
+         // THE FIX: Use Session Storage to survive redirects, but kill cross-device memory bugs
          const urlParams = new URLSearchParams(window.location.search);
-         const userSlug = urlParams.get('user') || localStorage.getItem('savedUserSlug') || 'flame'; 
+         let userSlug = urlParams.get('user');
          
+         if (userSlug) {
+             sessionStorage.setItem('savedUserSlug', userSlug);
+         } else {
+             userSlug = sessionStorage.getItem('savedUserSlug');
+         }
+
+         // THE HARD ERROR: Instantly lets you know if your NFC card is programmed wrong
+         if (!userSlug) {
+             document.body.innerHTML = `
+                 <div style="display:flex; justify-content:center; align-items:center; height:100vh; background:#000; color:#fff; text-align:center; padding:2rem;">
+                     <div>
+                         <i class="ri-error-warning-line" style="font-size:4rem; color:#ff003c;"></i>
+                         <h1 style="font-size:1.5rem; margin-top:1rem;">Invalid NFC Link</h1>
+                         <p style="color:#888;">This card is missing its unique ID.</p>
+                         <p style="color:#888; font-size:0.9rem; margin-top:1rem;">Please program the NFC card with:<br><b style="color:#ff003c;">.../index.html?user=yourname</b></p>
+                     </div>
+                 </div>
+             `;
+             throw new Error("No user slug provided in URL.");
+         }
+
          let cardOwnerUid = null;
          let currentUserUid = null;
 
@@ -560,7 +582,7 @@ window.addEventListener('scroll', scrollUp)
          const publicProjects = document.getElementById('projects-wrapper');
          const publicLinks = document.getElementById('contact-links-wrapper');
 
-         // THE FIX: This function verifies BOTH variables are loaded before showing the gear
+         // Verifies BOTH variables are loaded before showing the gear
          function checkAdminGear() {
              if (currentUserUid && cardOwnerUid && currentUserUid === cardOwnerUid) {
                  const editFab = document.getElementById('edit-fab');
@@ -590,7 +612,6 @@ window.addEventListener('scroll', scrollUp)
                   const data = querySnapshot.docs[0].data();
                   cardOwnerUid = data.ownerUid; 
                   
-                  // Now that we have the owner ID from the database, run the check again
                   checkAdminGear();
                   
                   if (data.avatar) document.getElementById('hero-image').src = data.avatar;

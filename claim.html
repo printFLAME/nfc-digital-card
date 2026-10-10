@@ -39,7 +39,7 @@ h1, h2, h3, h4 { color: var(--white-color); font-weight: var(--font-semi-bold); 
 
       <script type="module">
          import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
-         import { getAuth, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+         import { getAuth, signInWithRedirect, getRedirectResult, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
          import { getFirestore, collection, query, where, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
        
          const firebaseConfig = {
@@ -56,32 +56,44 @@ h1, h2, h3, h4 { color: var(--white-color); font-weight: var(--font-semi-bold); 
          const provider = new GoogleAuthProvider();
          const db = getFirestore(app);
 
+         // THE FIX: Use Session Storage to survive redirects but kill cross-device memory bugs
          const urlParams = new URLSearchParams(window.location.search);
-         if (urlParams.has('user')) localStorage.setItem('savedUserSlug', urlParams.get('user'));
-         const userSlug = localStorage.getItem('savedUserSlug') || 'flame';
+         let userSlug = urlParams.get('user');
+         
+         if (userSlug) {
+             sessionStorage.setItem('savedUserSlug', userSlug);
+         } else {
+             userSlug = sessionStorage.getItem('savedUserSlug');
+         }
 
-         document.getElementById('setup-login-btn').addEventListener('click', async () => {
-             const loader = document.getElementById('loader');
-             try {
-                 loader.style.display = 'flex';
-                 const result = await signInWithPopup(auth, provider); 
-                 const user = result.user;
-                 
-                 const q = query(collection(db, "DigitalCard"), where("name", "==", userSlug));
-                 const snap = await getDocs(q);
-                 
-                 if (snap.empty) {
-                     await addDoc(collection(db, "DigitalCard"), { name: userSlug, ownerUid: user.uid });
-                 }
-                 
-                 // Send them to the public profile where they can click the gear to edit
-                 window.location.href = `index.html?user=${userSlug}`;
-             } catch (error) {
-                 console.error("Auth Error:", error);
-                 loader.style.display = 'none';
-                 alert("Login failed or popup was blocked.");
-             }
+         // Hard block if someone opens claim.html without an ID
+         if (!userSlug) {
+             document.body.innerHTML = "<h1 style='color:white; text-align:center; margin-top:50px;'>Error: Missing ?user= ID in the link!</h1>";
+             throw new Error("No ID");
+         }
+
+         document.getElementById('setup-login-btn').addEventListener('click', () => {
+             document.getElementById('loader').style.display = 'flex';
+             signInWithRedirect(auth, provider);
          });
+
+         async function handleAuth() {
+             try { await getRedirectResult(auth); } catch (e) { console.error(e); }
+             
+             onAuthStateChanged(auth, async (user) => {
+                 if (user) {
+                     const q = query(collection(db, "DigitalCard"), where("name", "==", userSlug));
+                     const snap = await getDocs(q);
+                     
+                     if (snap.empty) {
+                         await addDoc(collection(db, "DigitalCard"), { name: userSlug, ownerUid: user.uid });
+                     }
+                     // Route to live profile
+                     window.location.href = `index.html?user=${userSlug}`;
+                 }
+             });
+         }
+         handleAuth();
       </script>
    </body>
 </html>
