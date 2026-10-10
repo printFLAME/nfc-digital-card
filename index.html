@@ -547,7 +547,6 @@ window.addEventListener('scroll', scrollUp)
          const auth = getAuth(app);
          const db = getFirestore(app);
        
-         // THE FIX: Use Session Storage to survive redirects, but kill cross-device memory bugs
          const urlParams = new URLSearchParams(window.location.search);
          let userSlug = urlParams.get('user');
          
@@ -557,7 +556,6 @@ window.addEventListener('scroll', scrollUp)
              userSlug = sessionStorage.getItem('savedUserSlug');
          }
 
-         // THE HARD ERROR: Instantly lets you know if your NFC card is programmed wrong
          if (!userSlug) {
              document.body.innerHTML = `
                  <div style="display:flex; justify-content:center; align-items:center; height:100vh; background:#000; color:#fff; text-align:center; padding:2rem;">
@@ -582,7 +580,6 @@ window.addEventListener('scroll', scrollUp)
          const publicProjects = document.getElementById('projects-wrapper');
          const publicLinks = document.getElementById('contact-links-wrapper');
 
-         // Verifies BOTH variables are loaded before showing the gear
          function checkAdminGear() {
              if (currentUserUid && cardOwnerUid && currentUserUid === cardOwnerUid) {
                  const editFab = document.getElementById('edit-fab');
@@ -592,7 +589,6 @@ window.addEventListener('scroll', scrollUp)
              }
          }
 
-         // 1. Get the current logged-in Google User
          onAuthStateChanged(auth, (user) => {
             if (user) {
                currentUserUid = user.uid;
@@ -600,7 +596,6 @@ window.addEventListener('scroll', scrollUp)
             }
          });
 
-         // 2. Get the Profile Data from Firestore
          async function loadProfileData() {
             try {
                const q = query(collection(db, "DigitalCard"), where("name", "==", userSlug));

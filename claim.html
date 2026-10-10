@@ -39,7 +39,7 @@ h1, h2, h3, h4 { color: var(--white-color); font-weight: var(--font-semi-bold); 
 
       <script type="module">
          import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
-         import { getAuth, signInWithRedirect, getRedirectResult, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+         import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
          import { getFirestore, collection, query, where, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
        
          const firebaseConfig = {
@@ -56,7 +56,6 @@ h1, h2, h3, h4 { color: var(--white-color); font-weight: var(--font-semi-bold); 
          const provider = new GoogleAuthProvider();
          const db = getFirestore(app);
 
-         // THE FIX: Use Session Storage to survive redirects but kill cross-device memory bugs
          const urlParams = new URLSearchParams(window.location.search);
          let userSlug = urlParams.get('user');
          
@@ -66,34 +65,46 @@ h1, h2, h3, h4 { color: var(--white-color); font-weight: var(--font-semi-bold); 
              userSlug = sessionStorage.getItem('savedUserSlug');
          }
 
-         // Hard block if someone opens claim.html without an ID
          if (!userSlug) {
              document.body.innerHTML = "<h1 style='color:white; text-align:center; margin-top:50px;'>Error: Missing ?user= ID in the link!</h1>";
              throw new Error("No ID");
          }
 
-         document.getElementById('setup-login-btn').addEventListener('click', () => {
-             document.getElementById('loader').style.display = 'flex';
-             signInWithRedirect(auth, provider);
+         // THE FIX: Track login state, but DO NOT automatically claim the card!
+         let activeUser = null;
+         onAuthStateChanged(auth, (user) => {
+             activeUser = user;
          });
 
-         async function handleAuth() {
-             try { await getRedirectResult(auth); } catch (e) { console.error(e); }
-             
-             onAuthStateChanged(auth, async (user) => {
-                 if (user) {
-                     const q = query(collection(db, "DigitalCard"), where("name", "==", userSlug));
-                     const snap = await getDocs(q);
-                     
-                     if (snap.empty) {
-                         await addDoc(collection(db, "DigitalCard"), { name: userSlug, ownerUid: user.uid });
-                     }
-                     // Route to live profile
-                     window.location.href = `index.html?user=${userSlug}`;
+         // THE FIX: Only claim the card when the human specifically clicks this button
+         document.getElementById('setup-login-btn').addEventListener('click', async () => {
+             const loader = document.getElementById('loader');
+             loader.style.display = 'flex';
+             try {
+                 let user = activeUser;
+                 
+                 // If not logged in in the background, pop open the Google Login
+                 if (!user) {
+                     const result = await signInWithPopup(auth, provider);
+                     user = result.user;
                  }
-             });
-         }
-         handleAuth();
+                 
+                 const q = query(collection(db, "DigitalCard"), where("name", "==", userSlug));
+                 const snap = await getDocs(q);
+                 
+                 // Create the database slot
+                 if (snap.empty) {
+                     await addDoc(collection(db, "DigitalCard"), { name: userSlug, ownerUid: user.uid });
+                 }
+                 
+                 // Send them to their live profile
+                 window.location.href = `index.html?user=${userSlug}`;
+             } catch (error) {
+                 console.error("Auth Error:", error);
+                 loader.style.display = 'none';
+                 alert("Login failed or popup was blocked.");
+             }
+         });
       </script>
    </body>
 </html>
