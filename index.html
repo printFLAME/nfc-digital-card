@@ -602,6 +602,7 @@ window.addEventListener('scroll', scrollUp)
                const querySnapshot = await getDocs(q);
        
                if (querySnapshot.empty) {
+                  // THE EXPERT FIX: If database is empty, lock them out of the profile entirely!
                   window.location.href = `claim.html?user=${userSlug}`;
                } else {
                   const data = querySnapshot.docs[0].data();

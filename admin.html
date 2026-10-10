@@ -68,7 +68,7 @@ input, button, textarea { border: none; outline: none; background: none; }
       <script type="module">
          import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
          import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
-         import { getFirestore, collection, query, where, getDocs, updateDoc, doc } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+         import { getFirestore, collection, query, where, getDocs, updateDoc, addDoc, doc } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
        
          const firebaseConfig = {
            apiKey: "AIzaSyA043mcgewwke4Rt2HusOPbcxgmzUv2bM0",
@@ -88,9 +88,7 @@ input, button, textarea { border: none; outline: none; background: none; }
          if (userSlug) sessionStorage.setItem('savedUserSlug', userSlug);
          else userSlug = sessionStorage.getItem('savedUserSlug');
 
-         if (!userSlug) {
-             window.location.href = 'index.html';
-         }
+         if (!userSlug) window.location.href = 'index.html';
 
          let currentDocId = null;
 
@@ -104,6 +102,7 @@ input, button, textarea { border: none; outline: none; background: none; }
              const snap = await getDocs(q);
              
              if (!snap.empty) {
+                 // The card exists, verify ownership and populate fields
                  const data = snap.docs[0].data();
                  currentDocId = snap.docs[0].id;
                  
@@ -120,9 +119,11 @@ input, button, textarea { border: none; outline: none; background: none; }
                  }
                  if (data.description) document.getElementById('edit-desc').value = data.description;
                  if (data.vcf) document.getElementById('edit-vcf').value = data.vcf;
-                 
                  if (data.projects) data.projects.forEach(p => addAdminProject(p.title, p.description, p.link));
                  if (data.links) data.links.forEach(l => addAdminLink(l.label, l.url));
+             } else {
+                 // THE EXPERT FIX: The card is brand new and unclaimed!
+                 // Just hide the loader and let them edit the blank fields. currentDocId remains null.
              }
              document.getElementById('loader').style.display = 'none';
          });
@@ -190,8 +191,8 @@ input, button, textarea { border: none; outline: none; background: none; }
              });
          });
 
+         // THE EXPERT FIX: Database slot is only created when you hit this button!
          document.getElementById('edit-save-btn').addEventListener('click', async () => {
-            if (!currentDocId) return;
             const btn = document.getElementById('edit-save-btn');
             btn.innerText = "Saving...";
 
@@ -213,9 +214,20 @@ input, button, textarea { border: none; outline: none; background: none; }
                const url = row.querySelector('.link-url').value;
                if (label && url) links.push({ label, url });
             });
+            
+            const dbPayload = { 
+               name: userSlug,
+               description, avatar, vcf, projects, links 
+            };
 
             try {
-               await updateDoc(doc(db, "DigitalCard", currentDocId), { description, avatar, vcf, projects, links });
+               if (currentDocId) {
+                  await updateDoc(doc(db, "DigitalCard", currentDocId), dbPayload);
+               } else {
+                  // Attach the owner's Google UID only when creating the brand new card
+                  dbPayload.ownerUid = auth.currentUser.uid;
+                  await addDoc(collection(db, "DigitalCard"), dbPayload);
+               }
                btn.innerText = "Success!";
                btn.style.background = "#00ff00";
                btn.style.color = "#000";
