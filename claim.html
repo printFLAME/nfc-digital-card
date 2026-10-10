@@ -8,50 +8,14 @@
       <style>
 /*=============== YOUR EXACT CSS (100% UNTOUCHED) ===============*/
 @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Syne:wght@400..800&display=swap");
-
-:root {
-  --header-height: 3.5rem;
-  --hue: 110;
-  --first-color: hsl(var(--hue), 75%, 60%);
-  --white-color: hsl(var(--hue), 24%, 98%);
-  --black-color: hsl(var(--hue), 12%, 8%);
-  --text-color: hsl(var(--hue), 4%, 70%);
-  --body-color: hsl(var(--hue), 12%, 4%);
-  --container-color: hsl(var(--hue), 8%, 10%);
-  --body-font: "Poppins", sans-serif;
-  --second-font: "Syne", sans-serif;
-  --biggest-font-size: 2rem;
-  --bigger-font-size: 1.75rem;
-  --h1-font-size: 1.5rem;
-  --h2-font-size: 1.25rem;
-  --h3-font-size: 1rem;
-  --normal-font-size: .938rem;
-  --small-font-size: .813rem;
-  --font-regular: 400;
-  --font-medium: 500;
-  --font-semi-bold: 600;
-  --z-tooltip: 10;
-  --z-fixed: 100;
-}
-
-@media (width >= 1150px) {
-  :root {
-    --biggest-font-size: 5rem;
-    --bigger-font-size: 3rem;
-    --h1-font-size: 2.25rem;
-    --h2-font-size: 1.5rem;
-    --h3-font-size: 1.25rem;
-    --normal-font-size: 1rem;
-  }
-}
-
+:root { --header-height: 3.5rem; --hue: 110; --first-color: hsl(var(--hue), 75%, 60%); --white-color: hsl(var(--hue), 24%, 98%); --black-color: hsl(var(--hue), 12%, 8%); --text-color: hsl(var(--hue), 4%, 70%); --body-color: hsl(var(--hue), 12%, 4%); --container-color: hsl(var(--hue), 8%, 10%); --body-font: "Poppins", sans-serif; --second-font: "Syne", sans-serif; --biggest-font-size: 2rem; --bigger-font-size: 1.75rem; --h1-font-size: 1.5rem; --h2-font-size: 1.25rem; --h3-font-size: 1rem; --normal-font-size: .938rem; --small-font-size: .813rem; --font-regular: 400; --font-medium: 500; --font-semi-bold: 600; --z-tooltip: 10; --z-fixed: 100; }
+@media (width >= 1150px) { :root { --biggest-font-size: 5rem; --bigger-font-size: 3rem; --h1-font-size: 2.25rem; --h2-font-size: 1.5rem; --h3-font-size: 1.25rem; --normal-font-size: 1rem; } }
 * { box-sizing: border-box; padding: 0; margin: 0; }
 html { scroll-behavior: smooth; }
 body, input, button, textarea, label { font-family: var(--body-font); font-size: var(--normal-font-size); }
 body { background-color: var(--body-color); color: var(--text-color); }
 input, button, textarea { border: none; outline: none; background: none; }
 h1, h2, h3, h4 { color: var(--white-color); font-weight: var(--font-semi-bold); font-family: var(--second-font); }
-
 .button { display: inline-flex; align-items: center; justify-content: center; column-gap: .5rem; background-color: var(--first-color); color: var(--black-color); padding: 1rem 2rem; border-radius: 4rem; font-weight: var(--font-semi-bold); transition: box-shadow 0.4s; cursor: pointer; }
 .button:hover { box-shadow: 0 8px 24px hsla(var(--hue), 75%, 60%, 0.3); }
 
@@ -66,7 +30,6 @@ h1, h2, h3, h4 { color: var(--white-color); font-weight: var(--font-semi-bold); 
    <body>
       <div id="loader" style="display: none;"><div class="spinner"></div></div>
 
-      <!-- Setup Screen -->
       <div id="setup-screen" class="setup-screen">
          <i class="ri-nfc-line" style="font-size: 4rem; color: var(--first-color);"></i>
          <h1>Claim Your Card</h1>
@@ -74,7 +37,6 @@ h1, h2, h3, h4 { color: var(--white-color); font-weight: var(--font-semi-bold); 
          <button class="button" id="setup-login-btn"><i class="ri-google-fill"></i> Sign in with Google</button>
       </div>
 
-      <!-- Logic -->
       <script type="module">
          import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
          import { getAuth, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
@@ -94,7 +56,6 @@ h1, h2, h3, h4 { color: var(--white-color); font-weight: var(--font-semi-bold); 
          const provider = new GoogleAuthProvider();
          const db = getFirestore(app);
 
-         // Remember URL Parameter
          const urlParams = new URLSearchParams(window.location.search);
          if (urlParams.has('user')) localStorage.setItem('savedUserSlug', urlParams.get('user'));
          const userSlug = localStorage.getItem('savedUserSlug') || 'flame';
@@ -103,19 +64,17 @@ h1, h2, h3, h4 { color: var(--white-color); font-weight: var(--font-semi-bold); 
              const loader = document.getElementById('loader');
              try {
                  loader.style.display = 'flex';
-                 // Popup Auth blocks the PC Loop!
                  const result = await signInWithPopup(auth, provider); 
                  const user = result.user;
                  
                  const q = query(collection(db, "DigitalCard"), where("name", "==", userSlug));
                  const snap = await getDocs(q);
                  
-                 // Create DB if empty
                  if (snap.empty) {
                      await addDoc(collection(db, "DigitalCard"), { name: userSlug, ownerUid: user.uid });
                  }
                  
-                 // Send them to their profile (default view) first!
+                 // Send them to the public profile where they can click the gear to edit
                  window.location.href = `index.html?user=${userSlug}`;
              } catch (error) {
                  console.error("Auth Error:", error);

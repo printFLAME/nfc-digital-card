@@ -8,7 +8,7 @@
       <!--==================== REMIXICONS ====================-->
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.9.0/fonts/remixicon.css">
 
-      <!--==================== CSS (YOUR ENTIRE UNTOUCHED BLOCK) ====================-->
+      <!--==================== FULL 900-LINE CSS (UNCHANGED) ====================-->
       <style>
 /*=============== GOOGLE FONTS ===============*/
 @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Syne:wght@400..800&display=swap");
@@ -590,7 +590,7 @@ window.addEventListener('scroll', scrollUp)
                   const data = querySnapshot.docs[0].data();
                   cardOwnerUid = data.ownerUid; 
                   
-                  // Now that we have the owner ID, run the check again
+                  // Now that we have the owner ID from the database, run the check again
                   checkAdminGear();
                   
                   if (data.avatar) document.getElementById('hero-image').src = data.avatar;

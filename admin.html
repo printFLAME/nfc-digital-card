@@ -8,23 +8,10 @@
       <style>
 /*=============== YOUR EXACT CSS (100% UNTOUCHED) ===============*/
 @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Syne:wght@400..800&display=swap");
-
-:root {
-  --hue: 110;
-  --first-color: hsl(var(--hue), 75%, 60%);
-  --white-color: hsl(var(--hue), 24%, 98%);
-  --black-color: hsl(var(--hue), 12%, 8%);
-  --text-color: hsl(var(--hue), 4%, 70%);
-  --body-color: hsl(var(--hue), 12%, 4%);
-  --container-color: hsl(var(--hue), 8%, 10%);
-  --body-font: "Poppins", sans-serif;
-  --small-font-size: .813rem;
-}
-
+:root { --hue: 110; --first-color: hsl(var(--hue), 75%, 60%); --white-color: hsl(var(--hue), 24%, 98%); --black-color: hsl(var(--hue), 12%, 8%); --text-color: hsl(var(--hue), 4%, 70%); --body-color: hsl(var(--hue), 12%, 4%); --container-color: hsl(var(--hue), 8%, 10%); --body-font: "Poppins", sans-serif; --small-font-size: .813rem; }
 * { box-sizing: border-box; padding: 0; margin: 0; }
 body { background-color: var(--body-color); color: var(--text-color); font-family: var(--body-font); display: flex; justify-content: center; align-items: flex-start; padding: 2rem 1rem; }
 input, button, textarea { border: none; outline: none; background: none; }
-
 .button { display: inline-flex; align-items: center; justify-content: center; column-gap: .5rem; background-color: var(--first-color); color: var(--black-color); padding: 1rem 2rem; border-radius: 4rem; font-weight: 600; cursor: pointer; transition: 0.3s; }
 .button:hover { box-shadow: 0 8px 24px hsla(var(--hue), 75%, 60%, 0.3); }
 
@@ -49,7 +36,6 @@ input, button, textarea { border: none; outline: none; background: none; }
    <body>
       <div id="loader"><div class="spinner"></div></div>
 
-      <!-- Admin Editor (Converted from Modal) -->
       <div class="edit-modal-content">
          <h2>Dashboard Settings</h2>
          
@@ -114,14 +100,12 @@ input, button, textarea { border: none; outline: none; background: none; }
                  const data = snap.docs[0].data();
                  currentDocId = snap.docs[0].id;
                  
-                 // Security Kickout
                  if (data.ownerUid !== user.uid) {
                      alert("Unauthorized. You do not own this card.");
                      window.location.href = `index.html?user=${userSlug}`;
                      return;
                  }
 
-                 // Populate Existing Fields
                  if (data.avatar) {
                      document.getElementById('edit-avatar-base64').value = data.avatar;
                      document.getElementById('avatar-preview').src = data.avatar;
@@ -129,13 +113,13 @@ input, button, textarea { border: none; outline: none; background: none; }
                  }
                  if (data.description) document.getElementById('edit-desc').value = data.description;
                  if (data.vcf) document.getElementById('edit-vcf').value = data.vcf;
+                 
                  if (data.projects) data.projects.forEach(p => addAdminProject(p.title, p.description, p.link));
                  if (data.links) data.links.forEach(l => addAdminLink(l.label, l.url));
              }
              document.getElementById('loader').style.display = 'none';
          });
 
-         // Image Compressor (Kept exactly as you had it)
          document.getElementById('edit-avatar-file').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -160,7 +144,6 @@ input, button, textarea { border: none; outline: none; background: none; }
             reader.readAsDataURL(file);
          });
 
-         // Dynamic Rows (Kept exactly as you had it)
          window.removeRow = function(el) { el.parentElement.remove(); };
 
          function addAdminProject(title = '', desc = '', link = '') {
@@ -189,7 +172,6 @@ input, button, textarea { border: none; outline: none; background: none; }
          document.getElementById('add-project-btn').addEventListener('click', () => addAdminProject());
          document.getElementById('add-link-btn').addEventListener('click', () => addAdminLink());
 
-         // Button Routing
          document.getElementById('edit-close-btn').addEventListener('click', () => {
              window.location.href = `index.html?user=${userSlug}`;
          });
@@ -230,6 +212,7 @@ input, button, textarea { border: none; outline: none; background: none; }
                btn.innerText = "Success!";
                btn.style.background = "#00ff00";
                btn.style.color = "#000";
+               
                setTimeout(() => window.location.href = `index.html?user=${userSlug}`, 800);
             } catch (error) {
                console.error("Save Error:", error);
