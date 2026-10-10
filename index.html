@@ -585,10 +585,10 @@ const scrollUp = () =>{ const scrollUp = document.getElementById('scroll-up'); t
 window.addEventListener('scroll', scrollUp)
       </script>
 
-      <!--==================== FIREBASE & DYNAMIC LOGIC ====================-->
+<!--==================== FIREBASE & DYNAMIC LOGIC ====================-->
       <script type="module">
          import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
-         import { getAuth, signInWithRedirect, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+         import { getAuth, signInWithRedirect, GoogleAuthProvider, onAuthStateChanged, getRedirectResult } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
          import { getFirestore, collection, query, where, getDocs, updateDoc, addDoc, doc } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
        
          const firebaseConfig = {
@@ -605,8 +605,13 @@ window.addEventListener('scroll', scrollUp)
          const provider = new GoogleAuthProvider();
          const db = getFirestore(app);
        
+         // 1. THE FIX: Save to LocalStorage so Google doesn't wipe ?user=test2 during redirect
          const urlParams = new URLSearchParams(window.location.search);
-         const userSlug = urlParams.get('user') || 'flame'; 
+         if (urlParams.has('user')) {
+            localStorage.setItem('savedUserSlug', urlParams.get('user'));
+         }
+         const userSlug = localStorage.getItem('savedUserSlug') || 'flame'; 
+
          let currentDocId = null;
          let cardOwnerUid = null; 
          let currentUserUid = null; 
@@ -624,7 +629,7 @@ window.addEventListener('scroll', scrollUp)
          const publicProjects = document.getElementById('projects-wrapper');
          const publicLinks = document.getElementById('contact-links-wrapper');
 
-         // 1. Image Upload & Compression Logic (Client-Side to Base64)
+         // 2. Image Upload & Compression Logic
          document.getElementById('edit-avatar-file').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -634,7 +639,7 @@ window.addEventListener('scroll', scrollUp)
                const img = new Image();
                img.onload = function() {
                   const canvas = document.createElement('canvas');
-                  const MAX_WIDTH = 400; // Compress image width
+                  const MAX_WIDTH = 400; 
                   const scaleSize = MAX_WIDTH / img.width;
                   canvas.width = MAX_WIDTH;
                   canvas.height = img.height * scaleSize;
@@ -642,7 +647,7 @@ window.addEventListener('scroll', scrollUp)
                   const ctx = canvas.getContext('2d');
                   ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                   
-                  const dataUrl = canvas.toDataURL('image/jpeg', 0.85); // 85% quality JPG
+                  const dataUrl = canvas.toDataURL('image/jpeg', 0.85); 
                   document.getElementById('edit-avatar-base64').value = dataUrl;
                   document.getElementById('avatar-preview').src = dataUrl;
                   document.getElementById('avatar-preview').style.display = 'block';
@@ -652,16 +657,27 @@ window.addEventListener('scroll', scrollUp)
             reader.readAsDataURL(file);
          });
 
-         // 2. Check Auth State & Trigger Database Load
-         onAuthStateChanged(auth, (user) => {
-            if (user) {
-               currentUserUid = user.uid; 
-               document.getElementById('footer-login').style.display = 'none'; 
-            }
-            loadProfileData(); 
-         });
+         // 3. THE FIX: Await Redirect to KILL THE LOOP TRAP
+         async function initAuth() {
+             try {
+                 await getRedirectResult(auth); // Forces code to wait for Google to finish
+             } catch(e) {
+                 console.error("Redirect Error:", e);
+             }
+             
+             // Now it is safe to check the state
+             onAuthStateChanged(auth, (user) => {
+                if (user) {
+                   currentUserUid = user.uid; 
+                   document.getElementById('footer-login').style.display = 'none'; 
+                }
+                loadProfileData(); 
+             });
+         }
+         
+         initAuth();
 
-         // 3. Fetch Database Content
+         // 4. Fetch Database Content
          async function loadProfileData() {
             try {
                const q = query(collection(db, "DigitalCard"), where("name", "==", userSlug));
@@ -675,7 +691,7 @@ window.addEventListener('scroll', scrollUp)
                       mainHeader.style.display = 'block';
                       mainContent.style.display = 'block';
                       mainFooter.style.display = 'block';
-                      editFab.style.display = 'flex'; // Show floating gear
+                      editFab.style.display = 'flex'; 
                       
                       publicProjects.innerHTML = `
                         <article class="work__card">
@@ -691,14 +707,13 @@ window.addEventListener('scroll', scrollUp)
                       addAdminProject(); 
                       addAdminLink();
                       
-                      // Trigger animations
                       const sr = ScrollReveal({ origin: 'top', distance: '60px', duration: 1200, delay: 150 });
                       sr.reveal(`.home__content, .services__container, .skills__container, .footer__container`);
                       sr.reveal(`.home__image, .about__data, .contact__container`, {origin: 'right'});
                       sr.reveal(`.about__title`, {origin: 'left'});
                       sr.reveal(`.work__card`, {interval: 100}); 
                   } else {
-                      // Not logged in, completely empty card: Show Setup Screen
+                      // Not logged in, completely empty card -> Show Setup Screen
                       loader.style.display = 'none';
                       setupScreen.style.display = 'flex';
                   }
@@ -713,10 +728,8 @@ window.addEventListener('scroll', scrollUp)
                       editFab.style.display = 'flex';
                   }
                   
-                  // Inject Image Safely
                   if (data.avatar) {
                      document.getElementById('hero-image').src = data.avatar;
-                     // Keep base64 stored so it isn't erased if user saves without re-uploading
                      document.getElementById('edit-avatar-base64').value = data.avatar;
                      document.getElementById('avatar-preview').src = data.avatar;
                      document.getElementById('avatar-preview').style.display = 'block';
@@ -730,7 +743,6 @@ window.addEventListener('scroll', scrollUp)
                       document.getElementById('edit-vcf').value = data.vcf;
                   }
                   
-                  // Inject Projects
                   publicProjects.innerHTML = '';
                   editProjects.innerHTML = ''; 
                   if (data.projects && data.projects.length > 0) {
@@ -764,15 +776,11 @@ window.addEventListener('scroll', scrollUp)
                      addAdminProject(); 
                   }
 
-                  // Inject Links safely (No more replacing the document body)
                   publicLinks.innerHTML = '';
                   editLinks.innerHTML = ''; 
-                  
-                  // Add the dynamic Save Contact button first if the link exists
                   if (data.vcf) {
                      publicLinks.innerHTML += `<a href="${data.vcf}" class="button" style="background-color: var(--white-color); color: var(--black-color);" target="_blank">Save Contact <i class="ri-contacts-book-2-line"></i></a>`;
                   }
-
                   if (data.links && data.links.length > 0) {
                      data.links.forEach(link => {
                            publicLinks.innerHTML += `<a href="${link.url}" class="button" target="_blank">${link.label} <i class="ri-arrow-right-up-line"></i></a>`;
@@ -782,14 +790,12 @@ window.addEventListener('scroll', scrollUp)
                      addAdminLink(); 
                   }
 
-                  // Reveal the public UI
                   loader.style.display = 'none';
                   setupScreen.style.display = 'none';
                   mainHeader.style.display = 'block';
                   mainContent.style.display = 'block';
                   mainFooter.style.display = 'block';
 
-                  // Fire Animations
                   const sr = ScrollReveal({ origin: 'top', distance: '60px', duration: 1200, delay: 150 });
                   sr.reveal(`.home__content, .services__container, .skills__container, .footer__container`);
                   sr.reveal(`.home__image, .about__data, .contact__container`, {origin: 'right'});
@@ -802,12 +808,15 @@ window.addEventListener('scroll', scrollUp)
             }
          }
 
-         // 4. Login Triggers
-         const triggerLogin = () => signInWithRedirect(auth, provider);
+         // 5. Login Triggers (Forces memory save right before jumping to Google)
+         const triggerLogin = () => {
+             localStorage.setItem('savedUserSlug', userSlug);
+             signInWithRedirect(auth, provider);
+         };
          document.getElementById('setup-login-btn').addEventListener('click', triggerLogin);
          document.getElementById('footer-login').addEventListener('click', (e) => { e.preventDefault(); triggerLogin(); });
 
-         // 5. Admin Modal Form Logic
+         // 6. Admin Modal Form Logic
          window.removeRow = function(el) { el.parentElement.remove(); };
 
          function addAdminProject(title = '', desc = '', link = '') {
@@ -839,13 +848,13 @@ window.addEventListener('scroll', scrollUp)
          editFab.addEventListener('click', () => editModal.style.display = 'flex');
          document.getElementById('edit-close-btn').addEventListener('click', () => editModal.style.display = 'none');
 
-         // 6. Save Changes to Firestore
+         // 7. Save Changes to Firestore
          document.getElementById('edit-save-btn').addEventListener('click', async () => {
             const btn = document.getElementById('edit-save-btn');
             btn.innerText = "Saving...";
 
             const description = document.getElementById('edit-desc').value;
-            const avatar = document.getElementById('edit-avatar-base64').value; // Grabs the base64 string
+            const avatar = document.getElementById('edit-avatar-base64').value; 
             const vcf = document.getElementById('edit-vcf').value;
             
             const projects = [];
@@ -876,6 +885,9 @@ window.addEventListener('scroll', scrollUp)
                btn.innerText = "Success!";
                btn.style.background = "#00ff00";
                btn.style.color = "#000";
+               
+               // Clear the saved memory once successfully saved
+               localStorage.removeItem('savedUserSlug');
                setTimeout(() => window.location.reload(), 800);
             } catch (error) {
                console.error("Save Error:", error);
