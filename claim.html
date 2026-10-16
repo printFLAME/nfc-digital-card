@@ -76,7 +76,7 @@ h1, h2, h3, h4 { color: var(--white-color); font-weight: var(--font-semi-bold); 
                  
                  // THE EXPERT FIX: Do NOT create the database entry here! 
                  // Just route them to the admin panel to fill out their profile.
-                 window.location.href = `admin.html?user=${userSlug}`;
+                 window.location.href = `index.html?user=${userSlug}`;
              } catch (error) {
                  console.error("Auth Error:", error);
                  loader.style.display = 'none';
