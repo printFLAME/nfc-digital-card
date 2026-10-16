@@ -38,60 +38,64 @@ h1, h2, h3, h4 { color: var(--white-color); font-weight: var(--font-semi-bold); 
       </div>
 
       <script type="module">
-         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
-         import { getAuth, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
-       
-         const firebaseConfig = {
-           apiKey: "AIzaSyA043mcgewwke4Rt2HusOPbcxgmzUv2bM0",
-           authDomain: "nfc-card-by-flame.firebaseapp.com",
-           projectId: "nfc-card-by-flame",
-           storageBucket: "nfc-card-by-flame.firebasestorage.app",
-           messagingSenderId: "185781519047",
-           appId: "1:185781519047:web:dcf141d9669a3055e274e2"
-         };
-       
-         const app = initializeApp(firebaseConfig);
-         const auth = getAuth(app);
-         const provider = new GoogleAuthProvider();
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+    import { getAuth, signInWithRedirect, GoogleAuthProvider, getRedirectResult, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+    import { getFirestore, collection, query, where, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+   
+    const firebaseConfig = {
+       apiKey: "AIzaSyA043mcgewwke4Rt2HusOPbcxgmzUv2bM0",
+       authDomain: "nfc-card-by-flame.firebaseapp.com",
+       projectId: "nfc-card-by-flame",
+       storageBucket: "nfc-card-by-flame.firebasestorage.app",
+       messagingSenderId: "185781519047",
+       appId: "1:185781519047:web:dcf141d9669a3055e274e2"
+    };
+   
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+    const db = getFirestore(app);
 
-         const urlParams = new URLSearchParams(window.location.search);
-         let userSlug = urlParams.get('user');
-         
-         if (userSlug) {
-             sessionStorage.setItem('savedUserSlug', userSlug);
-         } else {
-             userSlug = sessionStorage.getItem('savedUserSlug');
-         }
+    // Save URL parameter to survive the redirect
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('user')) localStorage.setItem('savedUserSlug', urlParams.get('user'));
+    const userSlug = localStorage.getItem('savedUserSlug') || 'flame';
 
-         if (!userSlug) {
-             document.body.innerHTML = "<h1 style='color:white; text-align:center; margin-top:50px;'>Error: Missing ?user= ID in the link!</h1>";
-             throw new Error("No ID");
-         }
+    // Hook up the login button (supports both ID names)
+    const loginBtn = document.getElementById('login-btn') || document.getElementById('setup-login-btn');
+    if (loginBtn) {
+        loginBtn.addEventListener('click', () => {
+            localStorage.setItem('savedUserSlug', userSlug);
+            signInWithRedirect(auth, provider);
+        });
+    }
 
-         document.getElementById('setup-login-btn').addEventListener('click', async () => {
-    const loader = document.getElementById('loader');
-    loader.style.display = 'flex';
-    try {
-        const result = await signInWithPopup(auth, provider);
-        const user = result.user;
-        
-        // 1. Check if the card is empty
-        const q = query(collection(db, "DigitalCard"), where("name", "==", userSlug));
-        const snap = await getDocs(q);
-        
-        // 2. Create the blank database slot locked to this user
-        if (snap.empty) {
-            await addDoc(collection(db, "DigitalCard"), { name: userSlug, ownerUid: user.uid });
+    async function handleAuth() {
+        try {
+            await getRedirectResult(auth);
+        } catch (error) {
+            console.error("Auth Redirect Error:", error);
         }
         
-        // 3. Send them to their default profile to view and edit
-        window.location.href = `index.html?user=${userSlug}`;
-    } catch (error) {
-        console.error("Auth Error:", error);
-        loader.style.display = 'none';
-        alert("Login failed or popup was blocked.");
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                if (loginBtn) loginBtn.innerText = "Setting up...";
+                
+                const q = query(collection(db, "DigitalCard"), where("name", "==", userSlug));
+                const snap = await getDocs(q);
+                
+                // Create the database slot if it is empty
+                if (snap.empty) {
+                    await addDoc(collection(db, "DigitalCard"), { name: userSlug, ownerUid: user.uid });
+                }
+                
+                // Redirect to the Public Profile
+                window.location.href = `index.html?user=${userSlug}`;
+            }
+        });
     }
-});
-      </script>
+    
+    handleAuth();
+</script>
    </body>
 </html>
