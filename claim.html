@@ -69,20 +69,29 @@ h1, h2, h3, h4 { color: var(--white-color); font-weight: var(--font-semi-bold); 
          }
 
          document.getElementById('setup-login-btn').addEventListener('click', async () => {
-             const loader = document.getElementById('loader');
-             loader.style.display = 'flex';
-             try {
-                 await signInWithPopup(auth, provider);
-                 
-                 // THE EXPERT FIX: Do NOT create the database entry here! 
-                 // Just route them to the admin panel to fill out their profile.
-                 window.location.href = `index.html?user=${userSlug}`;
-             } catch (error) {
-                 console.error("Auth Error:", error);
-                 loader.style.display = 'none';
-                 alert("Login failed or popup was blocked.");
-             }
-         });
+    const loader = document.getElementById('loader');
+    loader.style.display = 'flex';
+    try {
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
+        
+        // 1. Check if the card is empty
+        const q = query(collection(db, "DigitalCard"), where("name", "==", userSlug));
+        const snap = await getDocs(q);
+        
+        // 2. Create the blank database slot locked to this user
+        if (snap.empty) {
+            await addDoc(collection(db, "DigitalCard"), { name: userSlug, ownerUid: user.uid });
+        }
+        
+        // 3. Send them to their default profile to view and edit
+        window.location.href = `index.html?user=${userSlug}`;
+    } catch (error) {
+        console.error("Auth Error:", error);
+        loader.style.display = 'none';
+        alert("Login failed or popup was blocked.");
+    }
+});
       </script>
    </body>
 </html>
