@@ -531,9 +531,9 @@ window.addEventListener('scroll', scrollUp)
       <!--==================== DATABASE RETRIEVAL LOGIC ====================-->
       <script type="module">
          import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
-         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
-         import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
-       
+         import { initializeAuth, browserSessionPersistence, signOut } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+         import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+
          const firebaseConfig = {
            apiKey: "AIzaSyA043mcgewwke4Rt2HusOPbcxgmzUv2bM0",
            authDomain: "nfc-card-by-flame.firebaseapp.com",
@@ -542,130 +542,211 @@ window.addEventListener('scroll', scrollUp)
            messagingSenderId: "185781519047",
            appId: "1:185781519047:web:dcf141d9669a3055e274e2"
          };
-       
+
          const app = initializeApp(firebaseConfig);
-         const auth = getAuth(app);
+
+         // NO GHOST SESSIONS: the Google login is kept in sessionStorage only. It belongs to this one
+         // tab and is wiped when the tab closes. Old logins left in localStorage / IndexedDB by earlier
+         // versions of this app are never read, so a phone can't "remember" a stale admin session.
+         const auth = initializeAuth(app, { persistence: browserSessionPersistence });
          const db = getFirestore(app);
-       
-         const urlParams = new URLSearchParams(window.location.search);
-         let userSlug = urlParams.get('user');
-         
-         if (userSlug) {
-             sessionStorage.setItem('savedUserSlug', userSlug);
-         } else {
-             userSlug = sessionStorage.getItem('savedUserSlug');
+
+         // The card ID comes from the URL and ONLY from the URL (the old sessionStorage fallback is gone).
+         try { sessionStorage.removeItem('savedUserSlug'); localStorage.removeItem('savedUserSlug'); } catch (_) {}
+
+         /* ---------------- helpers ---------------- */
+         const $ = (id) => document.getElementById(id);
+         const withTimeout = (promise, ms = 15000) =>
+           Promise.race([promise, new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))]);
+
+         const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) =>
+           ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+         // Only http(s)/mailto/tel links are ever rendered (blocks javascript: URLs). Bare domains get https://
+         function normalizeUrl(raw, protocols = ['http:', 'https:', 'mailto:', 'tel:']) {
+           const value = String(raw ?? '').trim();
+           if (!value) return '';
+           const candidate = /^(https?:\/\/|mailto:|tel:)/i.test(value) ? value : 'https://' + value;
+           try {
+             const url = new URL(candidate);
+             return protocols.includes(url.protocol) ? url.href : '';
+           } catch (_) { return ''; }
          }
 
-         if (!userSlug) {
-             document.body.innerHTML = `
-                 <div style="display:flex; justify-content:center; align-items:center; height:100vh; background:#000; color:#fff; text-align:center; padding:2rem;">
-                     <div>
-                         <i class="ri-error-warning-line" style="font-size:4rem; color:#ff003c;"></i>
-                         <h1 style="font-size:1.5rem; margin-top:1rem;">Invalid NFC Link</h1>
-                         <p style="color:#888;">This card is missing its unique ID.</p>
-                         <p style="color:#888; font-size:0.9rem; margin-top:1rem;">Please program the NFC card with:<br><b style="color:#ff003c;">.../index.html?user=yourname</b></p>
-                     </div>
-                 </div>
-             `;
-             throw new Error("No user slug provided in URL.");
+         function safeImageSrc(src) {
+           const value = String(src ?? '').trim();
+           if (/^data:image\/(png|jpe?g|gif|webp);base64,/i.test(value)) return value;
+           return normalizeUrl(value, ['http:', 'https:']);
          }
 
-         let cardOwnerUid = null;
-         let currentUserUid = null;
+         const userSlug = (new URLSearchParams(window.location.search).get('user') || '').trim();
+         const slugIsValid = /^[A-Za-z0-9._-]{1,64}$/.test(userSlug) && userSlug !== '.' && userSlug !== '..';
+         const slugParam = encodeURIComponent(userSlug);
 
-         const loader = document.getElementById('loader');
-         const mainHeader = document.getElementById('header');
-         const mainContent = document.getElementById('main-content');
-         const mainFooter = document.getElementById('main-footer');
-         const publicProjects = document.getElementById('projects-wrapper');
-         const publicLinks = document.getElementById('contact-links-wrapper');
+         const loader = $('loader');
+         const mainHeader = $('header');
+         const mainContent = $('main-content');
+         const mainFooter = $('main-footer');
+         const publicProjects = $('projects-wrapper');
+         const publicLinks = $('contact-links-wrapper');
+         const editFab = $('edit-fab');
+         const authLink = $('footer-login'); // footer link: "Login / Claim Card" (unclaimed) or "Logout" (owner)
 
-         function checkAdminGear() {
-             if (currentUserUid && cardOwnerUid && currentUserUid === cardOwnerUid) {
-                 const editFab = document.getElementById('edit-fab');
-                 editFab.href = `admin.html?user=${userSlug}`;
-                 editFab.style.display = 'flex'; 
-                 document.getElementById('footer-login').style.display = 'none';
-             }
+         // Errors are shown INSIDE the loader overlay, so the page can never end up as an empty black screen.
+         function showOverlay(html) { loader.innerHTML = html; loader.style.display = 'flex'; }
+
+         function showInvalidLink() {
+           showOverlay(`
+             <div style="text-align:center; padding:2rem; color:#fff;">
+               <i class="ri-error-warning-line" style="font-size:4rem; color:#ff003c;"></i>
+               <h1 style="font-size:1.5rem; margin-top:1rem;">Invalid NFC Link</h1>
+               <p style="color:#888;">This card is missing its unique ID.</p>
+               <p style="color:#888; font-size:0.9rem; margin-top:1rem;">Please program the NFC card with:<br><b style="color:#ff003c;">.../index.html?user=yourname</b></p>
+             </div>`);
          }
 
-         onAuthStateChanged(auth, (user) => {
-            if (user) {
-               currentUserUid = user.uid;
-               checkAdminGear(); 
-            }
+         function showLoadError() {
+           showOverlay(`
+             <div style="text-align:center; padding:2rem; color:#fff;">
+               <i class="ri-wifi-off-line" style="font-size:4rem; color:var(--first-color);"></i>
+               <h1 style="font-size:1.5rem; margin: 1rem 0;">Couldn't load this card</h1>
+               <p style="color:#888; margin-bottom:1.5rem;">Check your connection and try again.</p>
+               <button class="button" id="retry-btn">Try again</button>
+             </div>`);
+           $('retry-btn').addEventListener('click', () => window.location.reload());
+         }
+
+         /* ---------------- rendering ---------------- */
+         function renderProfile(card, isOwner) {
+           // Unclaimed card: keep the default branding page exactly as written in the HTML.
+           if (!card) return;
+
+           const avatar = safeImageSrc(card.avatar);
+           if (avatar) $('hero-image').src = avatar;
+
+           if (card.description) {
+             $('hero-description').innerText = card.description;
+             $('about-description').innerText = card.description;
+           }
+
+           if (Array.isArray(card.projects) && card.projects.length > 0) {
+             publicProjects.innerHTML = card.projects.map((proj, index) => {
+               const link = normalizeUrl(proj.link, ['http:', 'https:']);
+               return `
+                 <article class="work__card">
+                    <a href="${esc(link || '#')}" class="work__link" target="${link ? '_blank' : ''}" rel="noopener noreferrer">
+                       <img src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80" alt="Work" class="work__img">
+                       <i class="ri-arrow-right-up-line work__icon"></i>
+                    </a>
+                    <h3 class="work__number">${String(index + 1).padStart(2, '0')}</h3>
+                    <h2 class="work__name">${esc(proj.title)}</h2>
+                    <p class="work__description">${esc(proj.description)}</p>
+                 </article>`;
+             }).join('');
+           } else if (isOwner) {
+             // Only the owner sees this hint; strangers never see admin instructions.
+             publicProjects.innerHTML = `<p style="text-align:center; color:#888;">Add your first project via the Admin Settings gear.</p>`;
+           } else {
+             publicProjects.innerHTML = '';
+           }
+
+           let linksHtml = '';
+           const vcf = normalizeUrl(card.vcf, ['http:', 'https:']);
+           if (vcf) {
+             linksHtml += `<a href="${esc(vcf)}" class="button" style="background-color: var(--white-color); color: var(--black-color);" target="_blank" rel="noopener noreferrer">Save Contact <i class="ri-contacts-book-2-line"></i></a>`;
+           }
+           (Array.isArray(card.links) ? card.links : []).forEach((item) => {
+             const url = normalizeUrl(item.url);
+             if (!url) return;
+             linksHtml += `<a href="${esc(url)}" class="button" target="_blank" rel="noopener noreferrer">${esc(item.label)} <i class="ri-arrow-right-up-line"></i></a>`;
+           });
+           publicLinks.innerHTML = linksHtml;
+         }
+
+         /* ---------------- who sees what ----------------
+            Unclaimed card            -> default page + "Login / Claim Card"
+            Claimed, viewer = owner   -> Settings gear + "Logout"
+            Claimed, anyone else      -> read-only: no gear, no login/logout                        */
+         let authMode = 'none';
+
+         function applyAccessControls(card, isOwner) {
+           editFab.style.display = 'none';
+
+           if (isOwner) {
+             editFab.href = `admin.html?user=${slugParam}`;
+             editFab.style.display = 'flex';
+             authMode = 'logout';
+             authLink.innerHTML = '<i class="ri-logout-box-r-line"></i> Logout';
+             authLink.style.display = '';
+           } else if (!card) {
+             authMode = 'claim';
+             authLink.innerHTML = '<i class="ri-lock-2-line"></i> Login / Claim Card';
+             authLink.style.display = '';
+           } else {
+             authMode = 'none';
+             authLink.style.display = 'none';
+           }
+         }
+
+         authLink.addEventListener('click', async (e) => {
+           e.preventDefault();
+           if (authMode === 'claim') {
+             window.location.href = `claim.html?user=${slugParam}`;
+           } else if (authMode === 'logout') {
+             try { await signOut(auth); } catch (err) { console.error('Sign-out error:', err); }
+             window.location.replace(`index.html?user=${slugParam}`);
+           }
          });
 
-         async function loadProfileData() {
-            try {
-               const q = query(collection(db, "DigitalCard"), where("name", "==", userSlug));
-               const querySnapshot = await getDocs(q);
-       
-               if (querySnapshot.empty) {
-                  // THE EXPERT FIX: If database is empty, lock them out of the profile entirely!
-                  window.location.href = `claim.html?user=${userSlug}`;
-               } else {
-                  const data = querySnapshot.docs[0].data();
-                  cardOwnerUid = data.ownerUid; 
-                  
-                  checkAdminGear();
-                  
-                  if (data.avatar) document.getElementById('hero-image').src = data.avatar;
-                  if (data.description) {
-                     document.getElementById('hero-description').innerText = data.description;
-                     document.getElementById('about-description').innerText = data.description;
-                  }
-                  
-                  publicProjects.innerHTML = '';
-                  if (data.projects && data.projects.length > 0) {
-                     data.projects.forEach((proj, index) => {
-                           publicProjects.innerHTML += `
-                              <article class="work__card">
-                                 <a href="${proj.link || '#'}" class="work__link" target="${proj.link ? '_blank' : ''}">
-                                    <img src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80" alt="Work" class="work__img">
-                                    <i class="ri-arrow-right-up-line work__icon"></i>
-                                 </a>
-                                 <h3 class="work__number">0${index + 1}</h3>
-                                 <h2 class="work__name">${proj.title}</h2>
-                                 <p class="work__description">${proj.description}</p>
-                              </article>
-                           `;
-                     });
-                  } else {
-                     publicProjects.innerHTML = `<p style="text-align:center; color:#888;">Add your first project via the Admin Settings gear.</p>`;
-                  }
+         function revealPage() {
+           loader.style.display = 'none';
+           mainHeader.style.display = 'block';
+           mainContent.style.display = 'block';
+           mainFooter.style.display = 'block';
 
-                  publicLinks.innerHTML = '';
-                  if (data.vcf) publicLinks.innerHTML += `<a href="${data.vcf}" class="button" style="background-color: var(--white-color); color: var(--black-color);" target="_blank">Save Contact <i class="ri-contacts-book-2-line"></i></a>`;
-                  if (data.links && data.links.length > 0) {
-                     data.links.forEach(link => {
-                           publicLinks.innerHTML += `<a href="${link.url}" class="button" target="_blank">${link.label} <i class="ri-arrow-right-up-line"></i></a>`;
-                     });
-                  }
-
-                  loader.style.display = 'none';
-                  mainHeader.style.display = 'block';
-                  mainContent.style.display = 'block';
-                  mainFooter.style.display = 'block';
-
-                  const sr = ScrollReveal({ origin: 'top', distance: '60px', duration: 1200, delay: 150 });
-                  sr.reveal(`.home__content, .services__container, .skills__container, .footer__container`);
-                  sr.reveal(`.home__image, .about__data, .contact__container`, {origin: 'right'});
-                  sr.reveal(`.about__title`, {origin: 'left'});
-                  sr.reveal(`.work__card`, {interval: 100}); 
-               }
-            } catch (error) {
-               console.error("Database Error:", error);
-               loader.style.display = 'none';
-            }
+           // A failed animation library must never blank or break the page.
+           try {
+             const sr = ScrollReveal({ origin: 'top', distance: '60px', duration: 1200, delay: 150 });
+             sr.reveal(`.home__content, .services__container, .skills__container, .footer__container`);
+             sr.reveal(`.home__image, .about__data, .contact__container`, {origin: 'right'});
+             sr.reveal(`.about__title`, {origin: 'left'});
+             sr.reveal(`.work__card`, {interval: 100});
+           } catch (err) {
+             console.warn('ScrollReveal unavailable:', err);
+           }
          }
 
-         loadProfileData(); 
+         async function init() {
+           if (!slugIsValid) { showInvalidLink(); return; }
 
-         document.getElementById('footer-login').addEventListener('click', (e) => { 
-             e.preventDefault(); 
-             window.location.href = `claim.html?user=${userSlug}`; 
-         });
+           // The logo used to point at "/index.html" (no ID). Keep it on this card.
+           const logo = document.querySelector('.nav__logo');
+           if (logo) logo.href = `index.html?user=${slugParam}`;
+
+           try {
+             // Wait for BOTH the card and the real auth state, so the UI is decided once and never flickers.
+             const [snap] = await withTimeout(Promise.all([
+               getDoc(doc(db, "DigitalCard", userSlug)),
+               auth.authStateReady()
+             ]));
+
+             const card = snap.exists() ? snap.data() : null;
+             const user = auth.currentUser;
+             const isOwner = !!(card && user && card.ownerUid && card.ownerUid === user.uid);
+
+             renderProfile(card, isOwner);
+             applyAccessControls(card, isOwner);
+             revealPage();
+           } catch (error) {
+             console.error("Database Error:", error);
+             showLoadError();
+           }
+         }
+
+         // Coming back via the browser's Back button must never show a stale (cached) admin/owner state.
+         window.addEventListener('pageshow', (e) => { if (e.persisted) window.location.reload(); });
+
+         init();
       </script>
    </body>
 </html>

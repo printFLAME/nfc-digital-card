@@ -67,9 +67,9 @@ input, button, textarea { border: none; outline: none; background: none; }
 
       <script type="module">
          import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
-         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
-         import { getFirestore, collection, query, where, getDocs, updateDoc, addDoc, doc } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
-       
+         import { initializeAuth, browserSessionPersistence, signOut } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+         import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+
          const firebaseConfig = {
            apiKey: "AIzaSyA043mcgewwke4Rt2HusOPbcxgmzUv2bM0",
            authDomain: "nfc-card-by-flame.firebaseapp.com",
@@ -78,166 +78,247 @@ input, button, textarea { border: none; outline: none; background: none; }
            messagingSenderId: "185781519047",
            appId: "1:185781519047:web:dcf141d9669a3055e274e2"
          };
-       
+
          const app = initializeApp(firebaseConfig);
-         const auth = getAuth(app);
+
+         // NO GHOST SESSIONS: login lives in sessionStorage only (this tab, gone when the tab closes).
+         const auth = initializeAuth(app, { persistence: browserSessionPersistence });
          const db = getFirestore(app);
 
-         const urlParams = new URLSearchParams(window.location.search);
-         let userSlug = urlParams.get('user');
-         if (userSlug) sessionStorage.setItem('savedUserSlug', userSlug);
-         else userSlug = sessionStorage.getItem('savedUserSlug');
+         // The card ID comes from the URL and ONLY from the URL (the old sessionStorage fallback is gone).
+         try { sessionStorage.removeItem('savedUserSlug'); localStorage.removeItem('savedUserSlug'); } catch (_) {}
 
-         if (!userSlug) window.location.href = 'index.html';
+         /* ---------------- helpers ---------------- */
+         const $ = (id) => document.getElementById(id);
+         const withTimeout = (promise, ms = 15000) =>
+           Promise.race([promise, new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))]);
 
-         let currentDocId = null;
+         // Only http(s)/mailto/tel links are accepted (blocks javascript: URLs). Bare domains get https://
+         function normalizeUrl(raw, protocols = ['http:', 'https:', 'mailto:', 'tel:']) {
+           const value = String(raw ?? '').trim();
+           if (!value) return '';
+           const candidate = /^(https?:\/\/|mailto:|tel:)/i.test(value) ? value : 'https://' + value;
+           try {
+             const url = new URL(candidate);
+             return protocols.includes(url.protocol) ? url.href : '';
+           } catch (_) { return ''; }
+         }
 
-         onAuthStateChanged(auth, async (user) => {
-             if (!user) {
-                 window.location.href = `claim.html?user=${userSlug}`;
-                 return;
-             }
-             
-             const q = query(collection(db, "DigitalCard"), where("name", "==", userSlug));
-             const snap = await getDocs(q);
-             
-             if (!snap.empty) {
-                 // The card exists, verify ownership and populate fields
-                 const data = snap.docs[0].data();
-                 currentDocId = snap.docs[0].id;
-                 
-                 if (data.ownerUid !== user.uid) {
-                     alert("Unauthorized. You do not own this card.");
-                     window.location.href = `index.html?user=${userSlug}`;
-                     return;
-                 }
+         function safeImageSrc(src) {
+           const value = String(src ?? '').trim();
+           if (/^data:image\/(png|jpe?g|gif|webp);base64,/i.test(value)) return value;
+           return normalizeUrl(value, ['http:', 'https:']);
+         }
 
-                 if (data.avatar) {
-                     document.getElementById('edit-avatar-base64').value = data.avatar;
-                     document.getElementById('avatar-preview').src = data.avatar;
-                     document.getElementById('avatar-preview').style.display = 'block';
-                 }
-                 if (data.description) document.getElementById('edit-desc').value = data.description;
-                 if (data.vcf) document.getElementById('edit-vcf').value = data.vcf;
-                 if (data.projects) data.projects.forEach(p => addAdminProject(p.title, p.description, p.link));
-                 if (data.links) data.links.forEach(l => addAdminLink(l.label, l.url));
-             } else {
-                 // THE EXPERT FIX: The card is brand new and unclaimed!
-                 // Just hide the loader and let them edit the blank fields. currentDocId remains null.
-             }
-             document.getElementById('loader').style.display = 'none';
-         });
+         const userSlug = (new URLSearchParams(window.location.search).get('user') || '').trim();
+         const slugIsValid = /^[A-Za-z0-9._-]{1,64}$/.test(userSlug) && userSlug !== '.' && userSlug !== '..';
+         const slugParam = encodeURIComponent(userSlug);
 
-         document.getElementById('edit-avatar-file').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(event) {
-               const img = new Image();
-               img.onload = function() {
-                  const canvas = document.createElement('canvas');
-                  const MAX_WIDTH = 400; 
-                  const scaleSize = MAX_WIDTH / img.width;
-                  canvas.width = MAX_WIDTH;
-                  canvas.height = img.height * scaleSize;
-                  const ctx = canvas.getContext('2d');
-                  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                  const dataUrl = canvas.toDataURL('image/jpeg', 0.85); 
-                  document.getElementById('edit-avatar-base64').value = dataUrl;
-                  document.getElementById('avatar-preview').src = dataUrl;
-                  document.getElementById('avatar-preview').style.display = 'block';
-               }
-               img.src = event.target.result;
-            }
-            reader.readAsDataURL(file);
-         });
+         const loader = $('loader');
 
+         // Leaving this page ALWAYS goes to the public profile (never to claim.html), and uses replace()
+         // so the Back button can't loop between pages.
+         const goToProfile = () => window.location.replace(`index.html?user=${slugParam}`);
+
+         // Errors are shown INSIDE the loader overlay, so a failure can never leave a silent black screen.
+         function showLoadError() {
+           loader.innerHTML = `
+             <div style="text-align:center; padding:2rem; color:#fff;">
+               <h2 style="margin-bottom:1rem;">Couldn't load your settings</h2>
+               <p style="color:#888; margin-bottom:1.5rem;">Check your connection and try again.</p>
+               <button class="button" id="retry-btn">Try again</button>
+               <button class="button" id="back-btn" style="background: transparent; border: 1px solid var(--text-color); color: var(--white-color); margin-left: .5rem;">Back</button>
+             </div>`;
+           loader.style.display = 'flex';
+           $('retry-btn').addEventListener('click', () => window.location.reload());
+           $('back-btn').addEventListener('click', goToProfile);
+         }
+
+         /* ---------------- dynamic rows (same markup as before; values are set via the DOM, not string-glued) ---------------- */
          window.removeRow = function(el) { el.parentElement.remove(); };
 
          function addAdminProject(title = '', desc = '', link = '') {
-            const div = document.createElement('div');
-            div.className = 'dynamic-row';
-            div.innerHTML = `
-               <i class="ri-close-line remove-btn" onclick="removeRow(this)"></i>
-               <input type="text" class="edit-input proj-title" placeholder="Project Title" value="${title}">
-               <textarea class="edit-textarea proj-desc" placeholder="Project Description">${desc}</textarea>
-               <input type="text" class="edit-input proj-link" placeholder="Project URL (Optional)" value="${link}">
-            `;
-            document.getElementById('edit-projects-container').appendChild(div);
+           const div = document.createElement('div');
+           div.className = 'dynamic-row';
+           div.innerHTML = `
+              <i class="ri-close-line remove-btn" onclick="removeRow(this)"></i>
+              <input type="text" class="edit-input proj-title" placeholder="Project Title">
+              <textarea class="edit-textarea proj-desc" placeholder="Project Description"></textarea>
+              <input type="text" class="edit-input proj-link" placeholder="Project URL (Optional)">
+           `;
+           div.querySelector('.proj-title').value = title || '';
+           div.querySelector('.proj-desc').value = desc || '';
+           div.querySelector('.proj-link').value = link || '';
+           $('edit-projects-container').appendChild(div);
          }
 
          function addAdminLink(label = '', url = '') {
-            const div = document.createElement('div');
-            div.className = 'dynamic-row';
-            div.innerHTML = `
-               <i class="ri-close-line remove-btn" onclick="removeRow(this)"></i>
-               <input type="text" class="edit-input link-label" placeholder="Button Label (e.g., LinkedIn)" value="${label}">
-               <input type="text" class="edit-input link-url" placeholder="URL (https://...)" value="${url}">
-            `;
-            document.getElementById('edit-links-container').appendChild(div);
+           const div = document.createElement('div');
+           div.className = 'dynamic-row';
+           div.innerHTML = `
+              <i class="ri-close-line remove-btn" onclick="removeRow(this)"></i>
+              <input type="text" class="edit-input link-label" placeholder="Button Label (e.g., LinkedIn)">
+              <input type="text" class="edit-input link-url" placeholder="URL (https://...)">
+           `;
+           div.querySelector('.link-label').value = label || '';
+           div.querySelector('.link-url').value = url || '';
+           $('edit-links-container').appendChild(div);
          }
 
-         document.getElementById('add-project-btn').addEventListener('click', () => addAdminProject());
-         document.getElementById('add-link-btn').addEventListener('click', () => addAdminLink());
+         $('add-project-btn').addEventListener('click', () => addAdminProject());
+         $('add-link-btn').addEventListener('click', () => addAdminLink());
 
-         document.getElementById('edit-close-btn').addEventListener('click', () => {
-             window.location.href = `index.html?user=${userSlug}`;
+         /* ---------------- photo upload (resize in the browser, store as a small JPEG) ---------------- */
+         $('edit-avatar-file').addEventListener('change', function(e) {
+           const file = e.target.files[0];
+           if (!file) return;
+           const reader = new FileReader();
+           reader.onload = function(event) {
+             const img = new Image();
+             img.onload = function() {
+               const canvas = document.createElement('canvas');
+               const MAX_WIDTH = 400;
+               const scaleSize = MAX_WIDTH / img.width;
+               canvas.width = MAX_WIDTH;
+               canvas.height = img.height * scaleSize;
+               const ctx = canvas.getContext('2d');
+               ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+               const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+               $('edit-avatar-base64').value = dataUrl;
+               $('avatar-preview').src = dataUrl;
+               $('avatar-preview').style.display = 'block';
+             };
+             img.onerror = () => alert("That file couldn't be read as an image. Please choose another photo.");
+             img.src = event.target.result;
+           };
+           reader.readAsDataURL(file);
          });
 
-         document.getElementById('edit-logout-btn').addEventListener('click', () => {
-             signOut(auth).then(() => {
-                 sessionStorage.removeItem('savedUserSlug');
-                 window.location.href = `index.html?user=${userSlug}`;
-             });
+         /* ---------------- load: owner-only ---------------- */
+         function populate(data) {
+           const avatar = safeImageSrc(data.avatar);
+           if (avatar) {
+             $('edit-avatar-base64').value = avatar;
+             $('avatar-preview').src = avatar;
+             $('avatar-preview').style.display = 'block';
+           }
+           $('edit-desc').value = data.description || '';
+           $('edit-vcf').value = data.vcf || '';
+           (Array.isArray(data.projects) ? data.projects : []).forEach(p => addAdminProject(p.title, p.description, p.link));
+           (Array.isArray(data.links) ? data.links : []).forEach(l => addAdminLink(l.label, l.url));
+         }
+
+         async function init() {
+           if (!slugIsValid) { window.location.replace('index.html'); return; }
+
+           try {
+             await withTimeout(auth.authStateReady());
+             const user = auth.currentUser;
+
+             // Not signed in: this page is not for you. Show the public profile (never bounce to claim.html -> no loops).
+             if (!user) { goToProfile(); return; }
+
+             const snap = await withTimeout(getDoc(doc(db, "DigitalCard", userSlug)));
+
+             // Unclaimed card: it can only be claimed with a click on claim.html, never from here.
+             if (!snap.exists()) { goToProfile(); return; }
+
+             const data = snap.data();
+             if (data.ownerUid !== user.uid) {
+               alert("Unauthorized. You do not own this card.");
+               goToProfile();
+               return;
+             }
+
+             populate(data);
+             loader.style.display = 'none';
+           } catch (err) {
+             console.error("Load Error:", err);
+             showLoadError();
+           }
+         }
+
+         /* ---------------- sign out / cancel ---------------- */
+         $('edit-close-btn').addEventListener('click', goToProfile);
+
+         $('edit-logout-btn').addEventListener('click', async () => {
+           try { await signOut(auth); } catch (err) { console.error("Sign-out error:", err); }
+           goToProfile();
          });
 
-         // THE EXPERT FIX: Database slot is only created when you hit this button!
-         document.getElementById('edit-save-btn').addEventListener('click', async () => {
-            const btn = document.getElementById('edit-save-btn');
-            btn.innerText = "Saving...";
+         /* ---------------- save ---------------- */
+         let saving = false;
+         $('edit-save-btn').addEventListener('click', async () => {
+           if (saving) return;
+           const btn = $('edit-save-btn');
+           const idleLabel = btn.innerText;
 
-            const description = document.getElementById('edit-desc').value;
-            const avatar = document.getElementById('edit-avatar-base64').value;
-            const vcf = document.getElementById('edit-vcf').value;
-            
-            const projects = [];
-            document.querySelectorAll('#edit-projects-container .dynamic-row').forEach(row => {
-               const title = row.querySelector('.proj-title').value;
-               const desc = row.querySelector('.proj-desc').value;
-               const link = row.querySelector('.proj-link').value;
-               if (title) projects.push({ title, description: desc, link });
-            });
+           if (!auth.currentUser) { goToProfile(); return; }
 
-            const links = [];
-            document.querySelectorAll('#edit-links-container .dynamic-row').forEach(row => {
-               const label = row.querySelector('.link-label').value;
-               const url = row.querySelector('.link-url').value;
-               if (label && url) links.push({ label, url });
-            });
-            
-            const dbPayload = { 
-               name: userSlug,
-               description, avatar, vcf, projects, links 
-            };
+           // Collect and sanitize everything BEFORE touching the database.
+           const description = $('edit-desc').value.trim();
+           const avatar = $('edit-avatar-base64').value;
+           const rawVcf = $('edit-vcf').value.trim();
+           const vcf = normalizeUrl(rawVcf, ['http:', 'https:']);
+           const badLinks = [];
+           if (rawVcf && !vcf) badLinks.push(rawVcf);
 
-            try {
-               if (currentDocId) {
-                  await updateDoc(doc(db, "DigitalCard", currentDocId), dbPayload);
-               } else {
-                  // Attach the owner's Google UID only when creating the brand new card
-                  dbPayload.ownerUid = auth.currentUser.uid;
-                  await addDoc(collection(db, "DigitalCard"), dbPayload);
-               }
-               btn.innerText = "Success!";
-               btn.style.background = "#00ff00";
-               btn.style.color = "#000";
-               
-               setTimeout(() => window.location.href = `index.html?user=${userSlug}`, 800);
-            } catch (error) {
-               console.error("Save Error:", error);
-               btn.innerText = "Error Saving";
-            }
+           const projects = [];
+           document.querySelectorAll('#edit-projects-container .dynamic-row').forEach(row => {
+             const title = row.querySelector('.proj-title').value.trim();
+             const desc = row.querySelector('.proj-desc').value.trim();
+             const rawLink = row.querySelector('.proj-link').value.trim();
+             if (!title) return;
+             const link = normalizeUrl(rawLink, ['http:', 'https:']);
+             if (rawLink && !link) badLinks.push(rawLink);
+             projects.push({ title, description: desc, link });
+           });
+
+           const links = [];
+           document.querySelectorAll('#edit-links-container .dynamic-row').forEach(row => {
+             const label = row.querySelector('.link-label').value.trim();
+             const rawUrl = row.querySelector('.link-url').value.trim();
+             if (!(label && rawUrl)) return;
+             const url = normalizeUrl(rawUrl);
+             if (!url) { badLinks.push(rawUrl); return; }
+             links.push({ label, url });
+           });
+
+           if (badLinks.length) {
+             alert(`This link can't be used: "${badLinks[0]}"\nPlease use a normal web address (https://...), mailto: or tel: link.`);
+             return;
+           }
+
+           // ownerUid and name are never sent: ownership can't be changed from this form.
+           const payload = { description, avatar, vcf, projects, links };
+
+           if (JSON.stringify(payload).length > 900000) {
+             alert("Your profile is too large to save. Please use a smaller photo.");
+             return;
+           }
+
+           saving = true;
+           btn.innerText = "Saving...";
+
+           try {
+             await withTimeout(updateDoc(doc(db, "DigitalCard", userSlug), payload), 20000);
+             btn.innerText = "Success!";
+             btn.style.background = "#00ff00";
+             btn.style.color = "#000";
+             // Keep the page fully visible until the redirect happens (nothing is torn down here).
+             setTimeout(goToProfile, 800);
+           } catch (error) {
+             console.error("Save Error:", error);
+             btn.innerText = "Error Saving";
+             // Let the person retry instead of leaving a dead button.
+             setTimeout(() => { btn.innerText = idleLabel; saving = false; }, 2500);
+           }
          });
+
+         // Coming back via the browser's Back button must re-check the real state instead of showing a stale form.
+         window.addEventListener('pageshow', (e) => { if (e.persisted) window.location.reload(); });
+
+         init();
       </script>
    </body>
 </html>
