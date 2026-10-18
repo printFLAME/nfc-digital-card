@@ -3,7 +3,7 @@
    <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Admin Dashboard | FLAME</title>
+      <title>Admin Dashboard</title>
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.9.0/fonts/remixicon.css">
       <style>
 /*=============== YOUR EXACT CSS (100% UNTOUCHED) ===============*/
@@ -15,17 +15,23 @@ input, button, textarea { border: none; outline: none; background: none; }
 .button { display: inline-flex; align-items: center; justify-content: center; column-gap: .5rem; background-color: var(--first-color); color: var(--black-color); padding: 1rem 2rem; border-radius: 4rem; font-weight: 600; cursor: pointer; transition: 0.3s; }
 .button:hover { box-shadow: 0 8px 24px hsla(var(--hue), 75%, 60%, 0.3); }
 
-.edit-modal-content { background: var(--container-color); padding: 2rem; border-radius: 1rem; width: 100%; max-width: 500px; border: 1px solid var(--first-color); margin: 2rem auto; }
+.edit-modal-content { background: var(--container-color); padding: 2rem; border-radius: 1rem; width: 100%; max-width: 550px; border: 1px solid var(--first-color); margin: 2rem auto; }
 .edit-modal-content h2 { border-bottom: 1px solid var(--first-color); padding-bottom: 0.5rem; margin-bottom: 1.5rem; color: var(--white-color); }
-.edit-modal-content label { display: block; margin-top: 1.5rem; margin-bottom: 0.5rem; color: var(--first-color); font-size: var(--small-font-size); text-transform: uppercase; letter-spacing: 1px; }
+.edit-modal-content h3 { margin-top: 2rem; padding-bottom: 0.4rem; border-bottom: 1px solid #333; color: var(--white-color); font-size: 1.05rem; }
+.edit-modal-content label { display: block; margin-top: 1.2rem; margin-bottom: 0.5rem; color: var(--first-color); font-size: var(--small-font-size); text-transform: uppercase; letter-spacing: 1px; }
 .edit-input { width: 100%; background: rgba(0,0,0,0.5); border: 1px solid #333; color: var(--white-color); padding: 12px; border-radius: 6px; font-family: var(--body-font); margin-bottom: 0.5rem; }
 .edit-input:focus { border-color: var(--first-color); }
-.edit-textarea { width: 100%; background: rgba(0,0,0,0.5); border: 1px solid #333; color: var(--white-color); padding: 12px; border-radius: 6px; font-family: var(--body-font); margin-bottom: 1rem; resize: vertical; min-height: 80px; }
+.edit-textarea { width: 100%; background: rgba(0,0,0,0.5); border: 1px solid #333; color: var(--white-color); padding: 12px; border-radius: 6px; font-family: var(--body-font); margin-bottom: 0.8rem; resize: vertical; min-height: 80px; }
 .edit-textarea:focus { border-color: var(--first-color); }
-.dynamic-row { background: rgba(255,255,255,0.03); border: 1px solid #222; padding: 1rem; border-radius: 6px; margin-bottom: 1rem; position: relative; }
+.dynamic-row { background: rgba(255,255,255,0.03); border: 1px solid #222; padding: 1.2rem 1rem 1rem; border-radius: 6px; margin-bottom: 1rem; position: relative; }
+.nested-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.4rem; }
+.nested-row .edit-input { margin-bottom: 0; }
 .remove-btn { position: absolute; top: 0.5rem; right: 0.5rem; color: var(--first-color); font-size: 1.2rem; cursor: pointer; }
+.nested-remove-btn { color: var(--first-color); font-size: 1.2rem; cursor: pointer; padding: 0 4px; }
 .add-btn { background: transparent; border: 1px dashed var(--first-color); color: var(--first-color); padding: 0.8rem; width: 100%; text-transform: uppercase; cursor: pointer; font-weight: bold; margin-top: 0.5rem; transition: 0.3s; border-radius: 6px;}
 .add-btn:hover { background: hsla(var(--hue), 75%, 60%, 0.1); }
+.sub-add-btn { background: transparent; border: 1px dashed #555; color: var(--white-color); padding: 0.5rem; width: 100%; font-size: 0.78rem; text-transform: uppercase; cursor: pointer; margin-top: 0.4rem; border-radius: 6px; }
+.sub-add-btn:hover { border-color: var(--first-color); color: var(--first-color); }
 .edit-actions { display: flex; justify-content: space-between; gap: 1rem; margin-top: 2rem; flex-wrap: wrap; }
 
 #loader { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--body-color); display: flex; justify-content: center; align-items: center; z-index: 9999; }
@@ -39,24 +45,52 @@ input, button, textarea { border: none; outline: none; background: none; }
       <div class="edit-modal-content">
          <h2>Dashboard Settings</h2>
          
-         <label>Upload Profile Photo</label>
+         <!--==================== HERO SECTION ====================-->
+         <h3>Hero Section</h3>
+
+         <label>Full Name (heroName)</label>
+         <input type="text" id="edit-hero-name" class="edit-input" placeholder="Name Here">
+
+         <label>Animated Roles (heroRoles - Optional, remove all to hide)</label>
+         <div id="edit-roles-container"></div>
+         <button type="button" class="add-btn" id="add-role-btn">+ Add Role</button>
+
+         <label>Tagline (heroTag - Optional, clear to hide)</label>
+         <textarea id="edit-hero-tag" class="edit-textarea" placeholder="Add your tagline here."></textarea>
+
+         <label>Profile Picture (Upload from Device or Paste Image URL)</label>
+         <input type="text" id="edit-avatar-url" class="edit-input" placeholder="Paste hosted image URL (or upload below)">
          <input type="file" id="edit-avatar-file" class="edit-input" accept="image/*" style="padding: 8px; background: rgba(0,0,0,0.2);">
-         <input type="hidden" id="edit-avatar-base64">
          <img id="avatar-preview" src="" style="width: 90px; height: 90px; display: none; border-radius: 12px; margin-top: 10px; border: 2px solid var(--first-color); object-fit: cover;">
-         
-         <label>vCard Download Link (Google Drive)</label>
-         <input type="text" id="edit-vcf" class="edit-input" placeholder="Paste .vcf file link here">
 
-         <label>Bio / Description</label>
-         <textarea id="edit-desc" class="edit-textarea" placeholder="Enter your bio..."></textarea>
+         <!--==================== ABOUT SECTION ====================-->
+         <h3>About Section</h3>
+         <label>About Header Text (aboutTitle)</label>
+         <textarea id="edit-about-title" class="edit-textarea" placeholder="About me section"></textarea>
          
-         <label>Portfolio Projects</label>
+         <!--==================== WORK / PROJECTS SECTION ====================-->
+         <h3>Work / Projects (Max 10)</h3>
          <div id="edit-projects-container"></div>
-         <button class="add-btn" id="add-project-btn">+ Add Project</button>
+         <button type="button" class="add-btn" id="add-project-btn">+ Add Project</button>
 
-         <label>Contact Links (Up to 5)</label>
+         <!--==================== SERVICES SECTION ====================-->
+         <h3>Services Section (Max 6)</h3>
+         <div id="edit-services-container"></div>
+         <button type="button" class="add-btn" id="add-service-btn">+ Add Service</button>
+
+         <!--==================== SKILLS SECTION ====================-->
+         <h3>Skills Section (Max 5 Category Cards)</h3>
+         <div id="edit-skills-container"></div>
+         <button type="button" class="add-btn" id="add-skill-cat-btn">+ Add Skill Category Card</button>
+
+         <!--==================== CONNECT WITH ME SECTION ====================-->
+         <h3>Connect With Me</h3>
+         <label>Mobile Number (Compulsory - Copies on Click)</label>
+         <input type="text" id="edit-phone" class="edit-input" placeholder="+91 00000 00000" required>
+
+         <label>Redirect Buttons (Instagram, LinkedIn, etc.)</label>
          <div id="edit-links-container"></div>
-         <button class="add-btn" id="add-link-btn">+ Add Link</button>
+         <button type="button" class="add-btn" id="add-link-btn">+ Add Redirect Button</button>
          
          <div class="edit-actions">
             <button class="button" id="edit-logout-btn" style="background: transparent; border: 1px solid var(--first-color); color: var(--first-color); padding: 0.8rem 1.5rem; margin-right: auto;">Sign Out</button>
@@ -110,6 +144,25 @@ input, button, textarea { border: none; outline: none; background: none; }
            return normalizeUrl(value, ['http:', 'https:']);
          }
 
+         function compressImageFile(file, maxWidth, callback) {
+           const reader = new FileReader();
+           reader.onload = function(event) {
+             const img = new Image();
+             img.onload = function() {
+               const canvas = document.createElement('canvas');
+               const scaleSize = maxWidth / img.width;
+               canvas.width = maxWidth;
+               canvas.height = img.height * scaleSize;
+               const ctx = canvas.getContext('2d');
+               ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+               callback(canvas.toDataURL('image/jpeg', 0.85));
+             };
+             img.onerror = () => alert("That file couldn't be read as an image. Please choose another photo.");
+             img.src = event.target.result;
+           };
+           reader.readAsDataURL(file);
+         }
+
          const userSlug = (new URLSearchParams(window.location.search).get('user') || '').trim();
          const slugIsValid = /^[A-Za-z0-9._-]{1,64}$/.test(userSlug) && userSlug !== '.' && userSlug !== '..';
          const slugParam = encodeURIComponent(userSlug);
@@ -130,82 +183,250 @@ input, button, textarea { border: none; outline: none; background: none; }
                <button class="button" id="back-btn" style="background: transparent; border: 1px solid var(--text-color); color: var(--white-color); margin-left: .5rem;">Back</button>
              </div>`;
            loader.style.display = 'flex';
-           $('retry-btn').addEventListener('click', () => window.location.reload());
-           $('back-btn').addEventListener('click', goToProfile);
+           $('retry-btn').addEventListener('click', () => window.location.reload());$('back-btn').addEventListener('click', goToProfile);
          }
 
-         /* ---------------- dynamic rows (same markup as before; values are set via the DOM, not string-glued) ---------------- */
+         /* ---------------- DEFAULT CONTENT ---------------- */
+         const DEFAULTS = {
+           heroName: "Name Here",
+           heroRoles: ["Role 1", "Role 2", "Role 3"],
+           heroTag: "Add your tagline here.",
+           aboutTitle: "About me section",
+           projects: [
+             {
+               projectTitle: "Restaurant Website",
+               projectDescription: "Professional website using HTML, CSS, and JavaScript.",
+               projectImageUrl: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+               projectLink: "https://example.com"
+             }
+           ],
+           services: [
+             {
+               serviceName: "Website Developer",
+               serviceDescription: "The service I offer to companies and clients involves working on professional, high-quality projects, doing what I am most passionate about.",
+               servicePerks: ["Web development", "Web performance", "Database", "Basic SEO"]
+             },
+             {
+               serviceName: "Web Designer",
+               serviceDescription: "The service I offer to companies and clients involves working on professional, high-quality projects, doing what I am most passionate about.",
+               servicePerks: ["Designer", "Responsive design", "Basic SEO"]
+             }
+           ],
+           skillCategories: [
+             {
+               categoryTitle: "Frontend",
+               skills: ["HTML", "CSS", "JavaScript", "React", "Sass", "Git", "GitHub"]
+             },
+             {
+               categoryTitle: "Backend",
+               skills: ["Laravel", "PostgreSQL", "Node Js", "Supabase", "Socket.io"]
+             },
+             {
+               categoryTitle: "Design",
+               skills: ["Figma", "Blender", "After effects", "Photoshop", "Ilustrator", "Framer"]
+             }
+           ],
+           phoneNumber: "+91 00000 00000",
+           links: [
+             { label: "Instagram", url: "https://instagram.com" }
+           ]
+         };
+
+         /* ---------------- dynamic builders ---------------- */
          window.removeRow = function(el) { el.parentElement.remove(); };
 
-         function addAdminProject(title = '', desc = '', link = '') {
+         // 1. Roles
+         function addRoleInput(role = '') {
+           const div = document.createElement('div');
+           div.className = 'nested-row';
+           div.innerHTML = `
+             <input type="text" class="edit-input role-item" placeholder="Role (e.g., Role 1)">
+             <i class="ri-close-line nested-remove-btn" onclick="removeRow(this)"></i>
+           `;
+           div.querySelector('.role-item').value = role || '';
+           $('edit-roles-container').appendChild(div);
+         }
+         $('add-role-btn').addEventListener('click', () => addRoleInput());
+
+         // 2. Projects (Limit: 10 Max)
+         function addAdminProject(title = '', desc = '', imgUrl = '', link = '') {
+           const container = $('edit-projects-container');
+           if (container.querySelectorAll('.dynamic-row').length >= 10) {
+             alert("Maximum 10 projects allowed.");
+             return;
+           }
            const div = document.createElement('div');
            div.className = 'dynamic-row';
            div.innerHTML = `
               <i class="ri-close-line remove-btn" onclick="removeRow(this)"></i>
-              <input type="text" class="edit-input proj-title" placeholder="Project Title">
+              <input type="text" class="edit-input proj-title" placeholder="Project Title (e.g., Restaurant Website)">
               <textarea class="edit-textarea proj-desc" placeholder="Project Description"></textarea>
-              <input type="text" class="edit-input proj-link" placeholder="Project URL (Optional)">
+              <input type="text" class="edit-input proj-img" placeholder="Project Thumbnail Image URL">
+              <input type="file" class="edit-input proj-img-file" accept="image/*" style="padding: 6px; font-size: 0.8rem; background: rgba(0,0,0,0.2);">
+              <input type="text" class="edit-input proj-link" placeholder="Project Destination URL (Optional)">
            `;
            div.querySelector('.proj-title').value = title || '';
            div.querySelector('.proj-desc').value = desc || '';
+           div.querySelector('.proj-img').value = imgUrl || '';
            div.querySelector('.proj-link').value = link || '';
-           $('edit-projects-container').appendChild(div);
+
+           div.querySelector('.proj-img-file').addEventListener('change', function(e) {
+             const file = e.target.files[0];
+             if (!file) return;
+             compressImageFile(file, 500, (dataUrl) => {
+               div.querySelector('.proj-img').value = dataUrl;
+             });
+           });
+
+           container.appendChild(div);
+         }
+         $('add-project-btn').addEventListener('click', () => addAdminProject());
+
+         // 3. Services (Limit: 6 Max, up to 5 Perks each)
+         function addPerkInput(perksContainer, perkText = '') {
+           if (perksContainer.querySelectorAll('.nested-row').length >= 5) {
+             alert("Maximum 5 bullet perks per service.");
+             return;
+           }
+           const row = document.createElement('div');
+           row.className = 'nested-row';
+           row.innerHTML = `
+             <input type="text" class="edit-input srv-perk" placeholder="Perk (e.g., Web development)">
+             <i class="ri-close-line nested-remove-btn" onclick="removeRow(this)"></i>
+           `;
+           row.querySelector('.srv-perk').value = perkText || '';
+           perksContainer.appendChild(row);
          }
 
+         function addAdminService(name = '', desc = '', perks = ['']) {
+           const container = $('edit-services-container');
+           if (container.querySelectorAll('.dynamic-row').length >= 6) {
+             alert("Maximum 6 services allowed.");
+             return;
+           }
+           const div = document.createElement('div');
+           div.className = 'dynamic-row';
+           div.innerHTML = `
+              <i class="ri-close-line remove-btn" onclick="removeRow(this)"></i>
+              <input type="text" class="edit-input srv-name" placeholder="Service Title (e.g., Website Developer)">
+              <textarea class="edit-textarea srv-desc" placeholder="Service Description"></textarea>
+              <div class="srv-perks-list"></div>
+              <button type="button" class="sub-add-btn">+ Add Perk (Max 5)</button>
+           `;
+           div.querySelector('.srv-name').value = name || '';
+           div.querySelector('.srv-desc').value = desc || '';
+           const perksList = div.querySelector('.srv-perks-list');
+           (Array.isArray(perks) && perks.length ? perks : ['']).slice(0, 5).forEach(p => addPerkInput(perksList, p));
+           div.querySelector('.sub-add-btn').addEventListener('click', () => addPerkInput(perksList, ''));
+           container.appendChild(div);
+         }
+         $('add-service-btn').addEventListener('click', () => addAdminService());
+
+         // 4. Skills Section (Max 5 Category Cards, multiple skill contents per card)
+         function addSkillContentInput(skillsList, skillText = '') {
+           const row = document.createElement('div');
+           row.className = 'nested-row';
+           row.innerHTML = `
+             <input type="text" class="edit-input skill-item-input" placeholder="Skill Content (e.g., HTML)">
+             <i class="ri-close-line nested-remove-btn" onclick="removeRow(this)"></i>
+           `;
+           row.querySelector('.skill-item-input').value = skillText || '';
+           skillsList.appendChild(row);
+         }
+
+         function addAdminSkillCategory(catTitle = '', skills = ['']) {
+           const container = $('edit-skills-container');
+           if (container.querySelectorAll('.dynamic-row').length >= 5) {
+             alert("Maximum 5 skill category cards allowed.");
+             return;
+           }
+           const div = document.createElement('div');
+           div.className = 'dynamic-row';
+           div.innerHTML = `
+              <i class="ri-close-line remove-btn" onclick="removeRow(this)"></i>
+              <input type="text" class="edit-input skill-cat-title" placeholder="Category Title (e.g., Frontend)">
+              <div class="skill-items-list"></div>
+              <button type="button" class="sub-add-btn">+ Add Skill Content</button>
+           `;
+           div.querySelector('.skill-cat-title').value = catTitle || '';
+           const skillsList = div.querySelector('.skill-items-list');
+           (Array.isArray(skills) && skills.length ? skills : ['']).forEach(s => addSkillContentInput(skillsList, s));
+           div.querySelector('.sub-add-btn').addEventListener('click', () => addSkillContentInput(skillsList, ''));
+           container.appendChild(div);
+         }
+         $('add-skill-cat-btn').addEventListener('click', () => addAdminSkillCategory());
+
+         // 5. Connect Redirect Buttons
          function addAdminLink(label = '', url = '') {
            const div = document.createElement('div');
            div.className = 'dynamic-row';
            div.innerHTML = `
               <i class="ri-close-line remove-btn" onclick="removeRow(this)"></i>
-              <input type="text" class="edit-input link-label" placeholder="Button Label (e.g., LinkedIn)">
-              <input type="text" class="edit-input link-url" placeholder="URL (https://...)">
+              <input type="text" class="edit-input link-label" placeholder="Button Name (e.g., Instagram)">
+              <input type="text" class="edit-input link-url" placeholder="Link to Redirect (https://...)">
            `;
            div.querySelector('.link-label').value = label || '';
            div.querySelector('.link-url').value = url || '';
            $('edit-links-container').appendChild(div);
          }
-
-         $('add-project-btn').addEventListener('click', () => addAdminProject());
          $('add-link-btn').addEventListener('click', () => addAdminLink());
 
-         /* ---------------- photo upload (resize in the browser, store as a small JPEG) ---------------- */
+         /* ---------------- profile photo upload & URL preview ---------------- */
          $('edit-avatar-file').addEventListener('change', function(e) {
            const file = e.target.files[0];
            if (!file) return;
-           const reader = new FileReader();
-           reader.onload = function(event) {
-             const img = new Image();
-             img.onload = function() {
-               const canvas = document.createElement('canvas');
-               const MAX_WIDTH = 400;
-               const scaleSize = MAX_WIDTH / img.width;
-               canvas.width = MAX_WIDTH;
-               canvas.height = img.height * scaleSize;
-               const ctx = canvas.getContext('2d');
-               ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-               const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-               $('edit-avatar-base64').value = dataUrl;
-               $('avatar-preview').src = dataUrl;
-               $('avatar-preview').style.display = 'block';
-             };
-             img.onerror = () => alert("That file couldn't be read as an image. Please choose another photo.");
-             img.src = event.target.result;
-           };
-           reader.readAsDataURL(file);
+           compressImageFile(file, 400, (dataUrl) => {
+             $('edit-avatar-url').value = dataUrl;
+             $('avatar-preview').src = dataUrl;
+             $('avatar-preview').style.display = 'block';
+           });
          });
 
-         /* ---------------- load: owner-only ---------------- */
+         $('edit-avatar-url').addEventListener('input', function() {
+           const valid = safeImageSrc(this.value);
+           if (valid) {
+             $('avatar-preview').src = valid;
+             $('avatar-preview').style.display = 'block';
+           }
+         });
+
+         /* ---------------- load: owner-only with Default Fallbacks ---------------- */
          function populate(data) {
-           const avatar = safeImageSrc(data.avatar);
+           $('edit-hero-name').value = data.heroName !== undefined ? data.heroName : DEFAULTS.heroName;
+
+           const roles = Array.isArray(data.heroRoles) ? data.heroRoles : DEFAULTS.heroRoles;
+           roles.forEach(r => addRoleInput(r));
+
+           const tag = data.heroTag !== undefined ? data.heroTag : (data.description !== undefined ? data.description : DEFAULTS.heroTag);
+           $('edit-hero-tag').value = tag;
+
+           const avatar = safeImageSrc(data.profileImageUrl || data.avatar);
            if (avatar) {
-             $('edit-avatar-base64').value = avatar;
+             $('edit-avatar-url').value = avatar;
              $('avatar-preview').src = avatar;
              $('avatar-preview').style.display = 'block';
            }
-           $('edit-desc').value = data.description || '';
-           $('edit-vcf').value = data.vcf || '';
-           (Array.isArray(data.projects) ? data.projects : []).forEach(p => addAdminProject(p.title, p.description, p.link));
-           (Array.isArray(data.links) ? data.links : []).forEach(l => addAdminLink(l.label, l.url));
+
+           $('edit-about-title').value = data.aboutTitle !== undefined ? data.aboutTitle : DEFAULTS.aboutTitle;
+
+           const projects = Array.isArray(data.projects) ? data.projects : DEFAULTS.projects;
+           projects.slice(0, 10).forEach(p => addAdminProject(
+             p.projectTitle !== undefined ? p.projectTitle : p.title,
+             p.projectDescription !== undefined ? p.projectDescription : p.description,
+             p.projectImageUrl || 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80',
+             p.projectLink !== undefined ? p.projectLink : p.link
+           ));
+
+           const services = Array.isArray(data.services) ? data.services : DEFAULTS.services;
+           services.slice(0, 6).forEach(s => addAdminService(s.serviceName, s.serviceDescription, s.servicePerks));
+
+           const skillCategories = Array.isArray(data.skillCategories) ? data.skillCategories : DEFAULTS.skillCategories;
+           skillCategories.slice(0, 5).forEach(c => addAdminSkillCategory(c.categoryTitle, c.skills));
+
+           $('edit-phone').value = data.phoneNumber !== undefined ? data.phoneNumber : DEFAULTS.phoneNumber;
+
+           const links = Array.isArray(data.links) ? data.links : DEFAULTS.links;
+           links.forEach(l => addAdminLink(l.label, l.url));
          }
 
          async function init() {
@@ -255,23 +476,73 @@ input, button, textarea { border: none; outline: none; background: none; }
 
            if (!auth.currentUser) { goToProfile(); return; }
 
-           // Collect and sanitize everything BEFORE touching the database.
-           const description = $('edit-desc').value.trim();
-           const avatar = $('edit-avatar-base64').value;
-           const rawVcf = $('edit-vcf').value.trim();
-           const vcf = normalizeUrl(rawVcf, ['http:', 'https:']);
+           const phoneNumber = $('edit-phone').value.trim();
+           if (!phoneNumber) {
+             alert("Mobile number is compulsory. Please enter a mobile number.");
+             $('edit-phone').focus();
+             return;
+           }
+
+           const heroName = $('edit-hero-name').value.trim() || DEFAULTS.heroName;
+           const heroRoles = [];
+           document.querySelectorAll('#edit-roles-container .role-item').forEach(inp => {
+             const val = inp.value.trim();
+             if (val) heroRoles.push(val);
+           });
+
+           const heroTag = $('edit-hero-tag').value.trim();
+           const rawAvatar = $('edit-avatar-url').value.trim();
+           const profileImageUrl = safeImageSrc(rawAvatar);
+           const aboutTitle = $('edit-about-title').value.trim();
+
            const badLinks = [];
-           if (rawVcf && !vcf) badLinks.push(rawVcf);
+           if (rawAvatar && !profileImageUrl) badLinks.push(rawAvatar);
 
            const projects = [];
            document.querySelectorAll('#edit-projects-container .dynamic-row').forEach(row => {
-             const title = row.querySelector('.proj-title').value.trim();
-             const desc = row.querySelector('.proj-desc').value.trim();
+             const projectTitle = row.querySelector('.proj-title').value.trim();
+             const projectDescription = row.querySelector('.proj-desc').value.trim();
+             const rawImg = row.querySelector('.proj-img').value.trim();
              const rawLink = row.querySelector('.proj-link').value.trim();
-             if (!title) return;
-             const link = normalizeUrl(rawLink, ['http:', 'https:']);
-             if (rawLink && !link) badLinks.push(rawLink);
-             projects.push({ title, description: desc, link });
+             if (!projectTitle) return;
+             const projectImageUrl = safeImageSrc(rawImg);
+             if (rawImg && !projectImageUrl) badLinks.push(rawImg);
+             const projectLink = normalizeUrl(rawLink, ['http:', 'https:']);
+             if (rawLink && !projectLink) badLinks.push(rawLink);
+             projects.push({
+               projectTitle,
+               projectDescription,
+               projectImageUrl,
+               projectLink,
+               title: projectTitle,
+               description: projectDescription,
+               link: projectLink
+             });
+           });
+
+           const services = [];
+           document.querySelectorAll('#edit-services-container .dynamic-row').forEach(row => {
+             const serviceName = row.querySelector('.srv-name').value.trim();
+             const serviceDescription = row.querySelector('.srv-desc').value.trim();
+             if (!serviceName) return;
+             const servicePerks = [];
+             row.querySelectorAll('.srv-perk').forEach(p => {
+               const val = p.value.trim();
+               if (val) servicePerks.push(val);
+             });
+             services.push({ serviceName, serviceDescription, servicePerks: servicePerks.slice(0, 5) });
+           });
+
+           const skillCategories = [];
+           document.querySelectorAll('#edit-skills-container .dynamic-row').forEach(row => {
+             const categoryTitle = row.querySelector('.skill-cat-title').value.trim();
+             if (!categoryTitle) return;
+             const skills = [];
+             row.querySelectorAll('.skill-item-input').forEach(s => {
+               const val = s.value.trim();
+               if (val) skills.push(val);
+             });
+             skillCategories.push({ categoryTitle, skills });
            });
 
            const links = [];
@@ -290,7 +561,20 @@ input, button, textarea { border: none; outline: none; background: none; }
            }
 
            // ownerUid and name are never sent: ownership can't be changed from this form.
-           const payload = { description, avatar, vcf, projects, links };
+           const payload = {
+             heroName,
+             heroRoles,
+             heroTag,
+             description: heroTag,
+             profileImageUrl,
+             avatar: profileImageUrl,
+             aboutTitle,
+             projects: projects.slice(0, 10),
+             services: services.slice(0, 6),
+             skillCategories: skillCategories.slice(0, 5),
+             phoneNumber,
+             links
+           };
 
            if (JSON.stringify(payload).length > 900000) {
              alert("Your profile is too large to save. Please use a smaller photo.");

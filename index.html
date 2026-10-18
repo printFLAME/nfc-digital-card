@@ -324,8 +324,8 @@ img { display: block; max-width: 100%; height: auto; }
                <div class="home__content">
                   <div id="hero-title-container">
                      <h1 class="home__title">
-                        Name Here <br>
-                        <span id="home-typed">Role 1</span>
+                        <div id="hero-name" style="display: inline;">Name Here</div>
+                        <span id="hero-roles-wrapper"><br><span id="home-typed">Role 1</span></span>
                      </h1>
                   </div>
                   <p class="home__description" id="hero-description">
@@ -341,12 +341,7 @@ img { display: block; max-width: 100%; height: auto; }
                <div class="home__image">
                   <div class="blob-big"></div>
                   <!-- ID fixed to hero-image to prevent javascript crashes -->
-                  <img src="profile-image.jpg" alt="Home" class="home__img" id="hero-image" onerror="this.src='https://via.placeholder.com/300/141414/c90000?text=Upload+Photo'">
-                  
-                  <div class="home__circle">
-                     <div class="home__text-circular">EXPLORE - MORE - LET'S - </div>
-                     <i class="ri-arrow-down-line"></i>
-                  </div>
+                  <img src="profile-image.jpg" alt="Home" class="home__img" id="hero-image" onerror="this.src='https://via.placeholder.com/300/141414/c90000?text=Upload+Photo'">                  
                </div>
             </div>
          </section>
@@ -355,14 +350,10 @@ img { display: block; max-width: 100%; height: auto; }
          <section class="about section" id="about">
             <div class="about__container container grid">
                <h2 class="about__title" id="about-title">
-                  About Me: A passionate professional dedicated to delivering <span>high-quality</span> 
-                  results and <span>impactful</span> solutions.
+                  About me section
                </h2>
                <div class="about__data">
-                  <p class="about__description" id="about-description">
-                     Add your detailed bio or description here.
-                  </p>
-                  <a href="#contact" class="button">Connect with me <i class="ri-arrow-right-line"></i></a>
+                  <a href="#contact" class="button">Connect with me<i class="ri-arrow-right-line"></i></a>
                </div>
             </div>
          </section>
@@ -371,7 +362,15 @@ img { display: block; max-width: 100%; height: auto; }
          <section class="work section" id="work">
             <h2 class="section__title">View My <span>Work</span></h2>
             <div class="work__container container" id="projects-wrapper">
-               <!-- Dynamic projects inject here -->
+               <article class="work__card">
+                  <a href="#" class="work__link">
+                     <img src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80" alt="Work" class="work__img">
+                     <i class="ri-arrow-right-up-line work__icon"></i>
+                  </a>
+                  <h3 class="work__number">01</h3>
+                  <h2 class="work__name">Restaurant Website</h2>
+                  <p class="work__description">Professional website using HTML, CSS, and JavaScript.</p>
+               </article>
             </div>
          </section>
 
@@ -456,7 +455,9 @@ img { display: block; max-width: 100%; height: auto; }
             
             <div class="contact__container container">
                <div class="contact__links" id="contact-links-wrapper">
-                  <!-- Dynamic Links and Save Contact Inject Here -->
+                  <!-- Default Compulsory Mobile Number Button (Copies on Click) & Redirect Link -->
+                  <button type="button" class="button" onclick="window.copyPhoneNumber(this, '+91 00000 00000')">+91 00000 00000</button>
+                  <a href="https://instagram.com" class="button" target="_blank" rel="noopener noreferrer">Instagram <i class="ri-arrow-right-up-line"></i></a>
                </div>
             </div>
          </section>
@@ -496,6 +497,37 @@ img { display: block; max-width: 100%; height: auto; }
 
       <!--=============== MAIN JS ===============-->
       <script>
+/*=============== COPY MOBILE NUMBER HELPER ===============*/
+window.copyPhoneNumber = function(btn, number) {
+   const textToCopy = String(number || '').trim();
+   if (!textToCopy) return;
+   const showCopied = () => {
+      const original = btn.getAttribute('data-number') || textToCopy;
+      btn.setAttribute('data-number', original);
+      btn.innerText = 'Copied!';
+      setTimeout(() => { btn.innerText = original; }, 1500);
+   };
+   if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(textToCopy).then(showCopied).catch(() => {
+         const temp = document.createElement('textarea');
+         temp.value = textToCopy;
+         document.body.appendChild(temp);
+         temp.select();
+         document.execCommand('copy');
+         document.body.removeChild(temp);
+         showCopied();
+      });
+   } else {
+      const temp = document.createElement('textarea');
+      temp.value = textToCopy;
+      document.body.appendChild(temp);
+      temp.select();
+      document.execCommand('copy');
+      document.body.removeChild(temp);
+      showCopied();
+   }
+};
+
 /*=============== SHOW & CLOSE MENU ===============*/
 const navMenu = document.getElementById('nav-menu'), navToggle = document.getElementById('nav-toggle'), navClose = document.getElementById('nav-close')
 if(navToggle){ navToggle.addEventListener('click', () => { navMenu.classList.add('show-menu') }) }
@@ -518,7 +550,9 @@ const text = document.querySelector('.home__text-circular');
 if (text) { text.innerHTML = text.innerText.split('').map((char, i) => `<span style="transform:rotate(${i * 12}deg)">${char}</span>`).join(''); }
 
 /*=============== HOME TYPED JS ===============*/
-if (document.getElementById('home-typed')) { new Typed('#home-typed', { strings: ['Role 1', 'Role 2', 'Role 3'], typeSpeed: 50, backSpeed: 50, loop: true }); }
+if (document.getElementById('home-typed')) {
+   window.heroTyped = new Typed('#home-typed', { strings: ['Role 1', 'Role 2', 'Role 3'], typeSpeed: 50, backSpeed: 50, loop: true });
+}
 
 /*=============== SCROLL SECTIONS ACTIVE LINK ===============*/
 const sections = document.querySelectorAll('section[id]')
@@ -590,6 +624,8 @@ window.addEventListener('scroll', scrollUp)
          const mainContent = $('main-content');
          const mainFooter = $('main-footer');
          const publicProjects = $('projects-wrapper');
+         const publicServices = $('services-wrapper');
+         const publicSkills = $('skills-wrapper');
          const publicLinks = $('contact-links-wrapper');
          const editFab = $('edit-fab');
          const heroClaimWrapper = $('hero-login-wrapper'); // Hero "Claim Card": ONLY for unclaimed cards
@@ -625,46 +661,121 @@ window.addEventListener('scroll', scrollUp)
            // Unclaimed card: keep the default branding page exactly as written in the HTML.
            if (!card) return;
 
-           const avatar = safeImageSrc(card.avatar);
+           // 1. HERO SECTION
+           if (card.heroName !== undefined) {
+             $('hero-name').innerText = card.heroName;
+           }
+
+           if (Array.isArray(card.heroRoles)) {
+             const cleanedRoles = card.heroRoles.map(r => String(r || '').trim()).filter(Boolean);
+             const rolesWrapper = $('hero-roles-wrapper');
+             if (window.heroTyped) {
+               try { window.heroTyped.destroy(); } catch (_) {}
+               window.heroTyped = null;
+             }
+             if (cleanedRoles.length > 0) {
+               if (rolesWrapper) rolesWrapper.style.display = '';
+               window.heroTyped = new Typed('#home-typed', {
+                 strings: cleanedRoles,
+                 typeSpeed: 50,
+                 backSpeed: 50,
+                 loop: true
+               });
+             } else {
+               if (rolesWrapper) rolesWrapper.style.display = 'none';
+             }
+           }
+
+           const tagText = card.heroTag !== undefined ? card.heroTag : card.description;
+           if (tagText !== undefined) {
+             const trimmedTag = String(tagText ?? '').trim();
+             if (trimmedTag) {
+               $('hero-description').innerText = trimmedTag;
+               $('hero-description').style.display = '';
+             } else {
+               $('hero-description').innerText = '';
+               $('hero-description').style.display = 'none';
+             }
+           }
+
+           const avatar = safeImageSrc(card.profileImageUrl || card.avatar);
            if (avatar) $('hero-image').src = avatar;
 
-           if (card.description) {
-             $('hero-description').innerText = card.description;
-             $('about-description').innerText = card.description;
+           // 2. ABOUT SECTION
+           if (card.aboutTitle !== undefined) {
+             $('about-title').innerText = card.aboutTitle;
            }
 
-           if (Array.isArray(card.projects) && card.projects.length > 0) {
-             publicProjects.innerHTML = card.projects.map((proj, index) => {
-               const link = normalizeUrl(proj.link, ['http:', 'https:']);
+           // 3. WORK / PROJECTS SECTION (Max 10)
+           if (Array.isArray(card.projects)) {
+             if (card.projects.length > 0) {
+               publicProjects.innerHTML = card.projects.slice(0, 10).map((proj, index) => {
+                 const title = proj.projectTitle !== undefined ? proj.projectTitle : proj.title;
+                 const desc = proj.projectDescription !== undefined ? proj.projectDescription : proj.description;
+                 const rawLink = proj.projectLink !== undefined ? proj.projectLink : proj.link;
+                 const link = normalizeUrl(rawLink, ['http:', 'https:']);
+                 const imgUrl = safeImageSrc(proj.projectImageUrl) || 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80';
+                 return `
+                   <article class="work__card">
+                      <a href="${esc(link || '#')}" class="work__link" ${link ? 'target="_blank" rel="noopener noreferrer"' : ''}>
+                         <img src="${esc(imgUrl)}" alt="Work" class="work__img">
+                         <i class="ri-arrow-right-up-line work__icon"></i>
+                      </a>
+                      <h3 class="work__number">${String(index + 1).padStart(2, '0')}</h3>
+                      <h2 class="work__name">${esc(title)}</h2>
+                      <p class="work__description">${esc(desc)}</p>
+                   </article>`;
+               }).join('');
+             } else if (isOwner) {
+               publicProjects.innerHTML = `<p style="text-align:center; color:#888;">Add your first project via the Admin Settings gear.</p>`;
+             } else {
+               publicProjects.innerHTML = '';
+             }
+           }
+
+           // 4. SERVICES SECTION (Max 6)
+           if (Array.isArray(card.services)) {
+             publicServices.innerHTML = card.services.slice(0, 6).map((srv) => {
+               const perks = (Array.isArray(srv.servicePerks) ? srv.servicePerks : []).slice(0, 5);
+               const perksHtml = perks.map(perk => `<li class="services__item"><i class="ri-checkbox-circle-fill"></i> ${esc(perk)}</li>`).join('');
                return `
-                 <article class="work__card">
-                    <a href="${esc(link || '#')}" class="work__link" target="${link ? '_blank' : ''}" rel="noopener noreferrer">
-                       <img src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80" alt="Work" class="work__img">
-                       <i class="ri-arrow-right-up-line work__icon"></i>
-                    </a>
-                    <h3 class="work__number">${String(index + 1).padStart(2, '0')}</h3>
-                    <h2 class="work__name">${esc(proj.title)}</h2>
-                    <p class="work__description">${esc(proj.description)}</p>
+                 <article class="services__card">
+                    <h2 class="services__name">${esc(srv.serviceName)}</h2>
+                    <p class="services__description">${esc(srv.serviceDescription)}</p>
+                    <ul class="services__list">${perksHtml}</ul>
                  </article>`;
              }).join('');
-           } else if (isOwner) {
-             // Only the owner sees this hint; strangers never see admin instructions.
-             publicProjects.innerHTML = `<p style="text-align:center; color:#888;">Add your first project via the Admin Settings gear.</p>`;
-           } else {
-             publicProjects.innerHTML = '';
            }
 
-           let linksHtml = '';
-           const vcf = normalizeUrl(card.vcf, ['http:', 'https:']);
-           if (vcf) {
-             linksHtml += `<a href="${esc(vcf)}" class="button" style="background-color: var(--white-color); color: var(--black-color);" target="_blank" rel="noopener noreferrer">Save Contact <i class="ri-contacts-book-2-line"></i></a>`;
+           // 5. SKILLS SECTION (Max 5 Category Cards)
+           if (Array.isArray(card.skillCategories)) {
+             const defaultIcons = ['ri-layout-3-line', 'ri-server-line', 'ri-pantone-line', 'ri-code-s-slash-line', 'ri-tools-line'];
+             publicSkills.innerHTML = card.skillCategories.slice(0, 5).map((cat, idx) => {
+               const icon = defaultIcons[idx % defaultIcons.length];
+               const items = Array.isArray(cat.skills) ? cat.skills : [];
+               const itemsHtml = items.map(skill => `<span class="skills__item">${esc(skill)}</span>`).join('');
+               return `
+                 <div class="skills__content">
+                    <h3 class="skills__title"><i class="${icon}"></i> ${esc(cat.categoryTitle)}</h3>
+                    <div class="skills__group">${itemsHtml}</div>
+                 </div>`;
+             }).join('');
            }
-           (Array.isArray(card.links) ? card.links : []).forEach((item) => {
-             const url = normalizeUrl(item.url);
-             if (!url) return;
-             linksHtml += `<a href="${esc(url)}" class="button" target="_blank" rel="noopener noreferrer">${esc(item.label)} <i class="ri-arrow-right-up-line"></i></a>`;
-           });
-           publicLinks.innerHTML = linksHtml;
+
+           // 6. CONNECT WITH ME SECTION (Compulsory Phone Copy Button + Redirect Buttons)
+           if (card.phoneNumber !== undefined || Array.isArray(card.links)) {
+             let linksHtml = '';
+             const phone = String(card.phoneNumber || '+91 00000 00000').trim();
+             if (phone) {
+               linksHtml += `<button type="button" class="button" data-phone="${esc(phone)}" onclick="window.copyPhoneNumber(this, this.getAttribute('data-phone'))">${esc(phone)}</button>`;
+             }
+             (Array.isArray(card.links) ? card.links : []).forEach((item) => {
+               const url = normalizeUrl(item.url);
+               if (!url) return;
+               linksHtml += `<a href="${esc(url)}" class="button" target="_blank" rel="noopener noreferrer">${esc(item.label)} <i class="ri-arrow-right-up-line"></i></a>`;
+             });
+             publicLinks.innerHTML = linksHtml;
+           }
          }
 
          /* ---------------- who sees what ----------------
