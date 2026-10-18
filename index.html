@@ -483,7 +483,7 @@ img { display: block; max-width: 100%; height: auto; }
 
             <!-- OWNER LOGIN: always at the end of the page so the owner can sign in from any device -->
             <div style="margin-top: 1.5rem;">
-               <a href="#" id="footer-login" style="display: inline-flex; align-items: center; column-gap: .4rem; color: var(--first-color); border: 1px solid var(--first-color); padding: .6rem 1.4rem; border-radius: 4rem; font-size: var(--small-font-size); font-weight: 500; text-decoration: none;"><i class="ri-lock-2-line"></i>Login</a>
+               <a href="#" id="footer-login" style="display: inline-flex; align-items: center; column-gap: .4rem; color: var(--first-color); border: 1px solid var(--first-color); padding: .6rem 1.4rem; border-radius: 4rem; font-size: var(--small-font-size); font-weight: 500; text-decoration: none;"><i class="ri-lock-2-line"></i> Owner Login</a>
             </div>
          </div>
       </footer>
@@ -595,8 +595,9 @@ window.addEventListener('scroll', scrollUp)
          const publicProjects = $('projects-wrapper');
          const publicLinks = $('contact-links-wrapper');
          const editFab = $('edit-fab');
-         const authLink = $('hero-login-btn'); // Hero button: "Claim Card" (strangers) or "Logout" (owner)
-         const footerLogin = $('footer-login'); // Footer button: "Owner Login" for everyone except the signed-in owner
+         const heroClaimWrapper = $('hero-login-wrapper'); // Hero "Claim Card": ONLY for unclaimed cards
+         const heroClaimBtn = $('hero-login-btn');
+         const footerAuthBtn = $('footer-login');           // Footer, always last: "Owner Login" (not signed in) / "Logout" (owner)
 
          // Errors are shown INSIDE the loader overlay, so the page can never end up as an empty black screen.
          function showOverlay(html) { loader.innerHTML = html; loader.style.display = 'flex'; }
@@ -670,41 +671,46 @@ window.addEventListener('scroll', scrollUp)
          }
 
          /* ---------------- who sees what ----------------
-            Unclaimed / Stranger      -> "Claim Card" (routes to login to check ownership)
-            Claimed, viewer = owner   -> Settings gear + "Logout"
-            Footer "Owner Login"      -> shown to everyone (strangers too) EXCEPT the signed-in owner,
-                                         so the owner can sign in from a new device and edit.  */
-         let authMode = 'none';
+            Unclaimed card            -> hero "Claim Card" (click -> Google login -> claims it)
+            Claimed card, ANY viewer  -> hero "Claim Card" is hidden. Read-only profile.
+            Claimed, not the owner    -> footer "Owner Login" (strangers, or the owner on a new device)
+            Claimed, viewer = owner   -> Settings gear + footer "Logout"
+            The footer button sits at the very end of the page and carries both Login and Logout.  */
+         let footerMode = 'login';
 
          function applyAccessControls(card, isOwner) {
-           editFab.style.display = 'none';
+           const isClaimed = !!card;
 
+           // Hero "Claim Card": visible ONLY while nobody owns the card.
+           if (heroClaimWrapper) heroClaimWrapper.style.display = isClaimed ? 'none' : '';
+
+           // Settings gear: owner only.
+           editFab.style.display = 'none';
            if (isOwner) {
              editFab.href = `admin.html?user=${slugParam}`;
              editFab.style.display = 'flex';
-             authMode = 'logout';
-             authLink.innerHTML = '<i class="ri-logout-box-r-line"></i> Logout';
-             if (footerLogin) footerLogin.style.display = 'none'; // already signed in; Logout is in the hero
-           } else {
-             authMode = 'claim';
-             authLink.innerHTML = 'Claim Card';
-             if (footerLogin) footerLogin.style.display = 'inline-flex';
            }
+
+           // Footer button: Logout for the owner, Login for everyone else.
+           footerMode = isOwner ? 'logout' : 'login';
+           footerAuthBtn.innerHTML = isOwner
+             ? '<i class="ri-logout-box-r-line"></i> Logout'
+             : '<i class="ri-lock-2-line"></i> Owner Login';
+           footerAuthBtn.style.display = 'inline-flex';
          }
 
-         // Goes to claim.html, which signs in and then either claims a free card or checks ownership of a taken one.
-         if (footerLogin) {
-           footerLogin.addEventListener('click', (e) => {
-             e.preventDefault();
-             window.location.href = `claim.html?user=${slugParam}`;
-           });
-         }
-
-         authLink.addEventListener('click', async (e) => {
+         // Hero "Claim Card" -> claim.html (Google login, then the card is claimed for that account).
+         heroClaimBtn.addEventListener('click', (e) => {
            e.preventDefault();
-           if (authMode === 'claim') {
+           window.location.href = `claim.html?user=${slugParam}`;
+         });
+
+         // Footer button -> Login (claim.html also works as the owner login for a claimed card) or Logout.
+         footerAuthBtn.addEventListener('click', async (e) => {
+           e.preventDefault();
+           if (footerMode === 'login') {
              window.location.href = `claim.html?user=${slugParam}`;
-           } else if (authMode === 'logout') {
+           } else {
              try { await signOut(auth); } catch (err) { console.error('Sign-out error:', err); }
              window.location.replace(`index.html?user=${slugParam}`);
            }
