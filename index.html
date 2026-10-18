@@ -449,6 +449,9 @@ img { display: block; max-width: 100%; height: auto; }
             </div>
          </section>
 
+         <!--==================== CUSTOM SECTIONS ====================-->
+         <div id="custom-sections-wrapper"></div>
+
          <!--==================== CONTACT SECTION ====================-->
          <section class="contact section" id="contact">
             <h2 class="section__title">Connect <span>With Me</span></h2>
@@ -626,6 +629,7 @@ window.addEventListener('scroll', scrollUp)
          const publicProjects = $('projects-wrapper');
          const publicServices = $('services-wrapper');
          const publicSkills = $('skills-wrapper');
+         const publicCustomSections = $('custom-sections-wrapper');
          const publicLinks = $('contact-links-wrapper');
          const editFab = $('edit-fab');
          const heroClaimWrapper = $('hero-login-wrapper'); // Hero "Claim Card": ONLY for unclaimed cards
@@ -660,6 +664,11 @@ window.addEventListener('scroll', scrollUp)
          function renderProfile(card, isOwner) {
            // Unclaimed card: keep the default branding page exactly as written in the HTML.
            if (!card) return;
+
+           // 0. THEME COLOR HUE
+           if (card.themeHue !== undefined && card.themeHue !== null && card.themeHue !== '') {
+             document.documentElement.style.setProperty('--hue', String(card.themeHue));
+           }
 
            // 1. HERO SECTION
            if (card.heroName !== undefined) {
@@ -748,8 +757,8 @@ window.addEventListener('scroll', scrollUp)
            }
 
            // 5. SKILLS SECTION (Max 5 Category Cards)
+           const defaultIcons = ['ri-layout-3-line', 'ri-server-line', 'ri-pantone-line', 'ri-code-s-slash-line', 'ri-tools-line'];
            if (Array.isArray(card.skillCategories)) {
-             const defaultIcons = ['ri-layout-3-line', 'ri-server-line', 'ri-pantone-line', 'ri-code-s-slash-line', 'ri-tools-line'];
              publicSkills.innerHTML = card.skillCategories.slice(0, 5).map((cat, idx) => {
                const icon = defaultIcons[idx % defaultIcons.length];
                const items = Array.isArray(cat.skills) ? cat.skills : [];
@@ -762,7 +771,100 @@ window.addEventListener('scroll', scrollUp)
              }).join('');
            }
 
-           // 6. CONNECT WITH ME SECTION (Compulsory Phone Copy Button + Redirect Buttons)
+           // 6. CUSTOM SECTIONS (Max 3 Sections, 4 Layout Options)
+           if (publicCustomSections && Array.isArray(card.customSections)) {
+             publicCustomSections.innerHTML = card.customSections.slice(0, 3).map((sec) => {
+               const rawTitle = String(sec.sectionTitle || '').trim();
+               if (!rawTitle) return '';
+               const words = rawTitle.split(/\s+/);
+               const titleHtml = words.length > 1
+                 ? `${esc(words.slice(0, -1).join(' '))} <span>${esc(words[words.length - 1])}</span>`
+                 : `<span>${esc(rawTitle)}</span>`;
+               const subtitle = String(sec.sectionSubtitle || '').trim();
+               const subtitleHtml = subtitle ? `<p class="skills__description container">${esc(subtitle)}</p>` : '';
+               const layout = sec.layoutType || 'skills';
+               const cards = (Array.isArray(sec.cards) ? sec.cards : []).slice(0, 6);
+
+               if (layout === 'skills') {
+                 const cardsHtml = cards.map((c, idx) => {
+                   const icon = defaultIcons[idx % defaultIcons.length];
+                   const items = Array.isArray(c.items) ? c.items : [];
+                   const itemsHtml = items.map(it => `<span class="skills__item">${esc(it)}</span>`).join('');
+                   return `
+                     <div class="skills__content">
+                        <h3 class="skills__title"><i class="${icon}"></i> ${esc(c.title)}</h3>
+                        <div class="skills__group">${itemsHtml}</div>
+                     </div>`;
+                 }).join('');
+                 return `
+                   <section class="skills section">
+                      <h2 class="section__title">${titleHtml}</h2>
+                      ${subtitleHtml}
+                      <div class="skills__container container grid">${cardsHtml}</div>
+                   </section>`;
+               }
+
+               if (layout === 'services') {
+                 const cardsHtml = cards.map((c) => {
+                   const perks = (Array.isArray(c.items) ? c.items : []).slice(0, 5);
+                   const perksHtml = perks.map(p => `<li class="services__item"><i class="ri-checkbox-circle-fill"></i> ${esc(p)}</li>`).join('');
+                   return `
+                     <article class="services__card">
+                        <h2 class="services__name">${esc(c.title)}</h2>
+                        <p class="services__description">${esc(c.description)}</p>
+                        <ul class="services__list">${perksHtml}</ul>
+                     </article>`;
+                 }).join('');
+                 return `
+                   <section class="services section">
+                      <h2 class="section__title">${titleHtml}</h2>
+                      ${subtitleHtml}
+                      <div class="services__container container grid">${cardsHtml}</div>
+                   </section>`;
+               }
+
+               if (layout === 'work') {
+                 const cardsHtml = cards.map((c, index) => {
+                   const link = normalizeUrl(c.link, ['http:', 'https:']);
+                   const imgUrl = safeImageSrc(c.imageUrl) || 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80';
+                   return `
+                     <article class="work__card">
+                        <a href="${esc(link || '#')}" class="work__link" ${link ? 'target="_blank" rel="noopener noreferrer"' : ''}>
+                           <img src="${esc(imgUrl)}" alt="Work" class="work__img">
+                           <i class="ri-arrow-right-up-line work__icon"></i>
+                        </a>
+                        <h3 class="work__number">${String(index + 1).padStart(2, '0')}</h3>
+                        <h2 class="work__name">${esc(c.title)}</h2>
+                        <p class="work__description">${esc(c.description)}</p>
+                     </article>`;
+                 }).join('');
+                 return `
+                   <section class="work section">
+                      <h2 class="section__title">${titleHtml}</h2>
+                      ${subtitleHtml}
+                      <div class="work__container container">${cardsHtml}</div>
+                   </section>`;
+               }
+
+               // 4th Option: 'text' (Simple Text Block - About Style)
+               const blocksHtml = cards.map((c) => {
+                 const hasDesc = String(c.description || '').trim().length > 0;
+                 return `
+                   <div class="about__container container grid" style="${hasDesc ? '' : 'grid-template-columns: 1fr; text-align: center;'} margin-bottom: 2rem;">
+                      <h2 class="about__title">${esc(c.title)}</h2>
+                      ${hasDesc ? `<div class="about__data"><p class="about__description" style="margin-bottom: 0;">${esc(c.description)}</p></div>` : ''}
+                   </div>`;
+               }).join('');
+               return `
+                 <section class="about section">
+                    <h2 class="section__title">${titleHtml}</h2>
+                    ${subtitleHtml}
+                    ${blocksHtml}
+                 </section>`;
+             }).join('');
+           }
+
+           // 7. CONNECT WITH ME SECTION (Compulsory Phone Copy Button + Redirect Buttons)
            if (card.phoneNumber !== undefined || Array.isArray(card.links)) {
              let linksHtml = '';
              const phone = String(card.phoneNumber || '+91 00000 00000').trim();

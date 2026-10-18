@@ -11,7 +11,7 @@
 :root { --header-height: 3.5rem; --hue: 110; --first-color: hsl(var(--hue), 75%, 60%); --white-color: hsl(var(--hue), 24%, 98%); --black-color: hsl(var(--hue), 12%, 8%); --text-color: hsl(var(--hue), 4%, 70%); --body-color: hsl(var(--hue), 12%, 4%); --container-color: hsl(var(--hue), 8%, 10%); --body-font: "Poppins", sans-serif; --small-font-size: .813rem; }
 * { box-sizing: border-box; padding: 0; margin: 0; }
 body { background-color: var(--body-color); color: var(--text-color); font-family: var(--body-font); display: flex; justify-content: center; align-items: flex-start; padding: 2rem 1rem; }
-input, button, textarea { border: none; outline: none; background: none; }
+input, button, textarea, select { border: none; outline: none; background: none; }
 .button { display: inline-flex; align-items: center; justify-content: center; column-gap: .5rem; background-color: var(--first-color); color: var(--black-color); padding: 1rem 2rem; border-radius: 4rem; font-weight: 600; cursor: pointer; transition: 0.3s; }
 .button:hover { box-shadow: 0 8px 24px hsla(var(--hue), 75%, 60%, 0.3); }
 
@@ -21,9 +21,11 @@ input, button, textarea { border: none; outline: none; background: none; }
 .edit-modal-content label { display: block; margin-top: 1.2rem; margin-bottom: 0.5rem; color: var(--first-color); font-size: var(--small-font-size); text-transform: uppercase; letter-spacing: 1px; }
 .edit-input { width: 100%; background: rgba(0,0,0,0.5); border: 1px solid #333; color: var(--white-color); padding: 12px; border-radius: 6px; font-family: var(--body-font); margin-bottom: 0.5rem; }
 .edit-input:focus { border-color: var(--first-color); }
+.edit-input option { background: #141414; color: var(--white-color); }
 .edit-textarea { width: 100%; background: rgba(0,0,0,0.5); border: 1px solid #333; color: var(--white-color); padding: 12px; border-radius: 6px; font-family: var(--body-font); margin-bottom: 0.8rem; resize: vertical; min-height: 80px; }
 .edit-textarea:focus { border-color: var(--first-color); }
 .dynamic-row { background: rgba(255,255,255,0.03); border: 1px solid #222; padding: 1.2rem 1rem 1rem; border-radius: 6px; margin-bottom: 1rem; position: relative; }
+.custom-card-box { background: rgba(0,0,0,0.35); border: 1px solid #2a2a2a; padding: 1rem; border-radius: 6px; margin-top: 0.75rem; position: relative; }
 .nested-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.4rem; }
 .nested-row .edit-input { margin-bottom: 0; }
 .remove-btn { position: absolute; top: 0.5rem; right: 0.5rem; color: var(--first-color); font-size: 1.2rem; cursor: pointer; }
@@ -33,6 +35,12 @@ input, button, textarea { border: none; outline: none; background: none; }
 .sub-add-btn { background: transparent; border: 1px dashed #555; color: var(--white-color); padding: 0.5rem; width: 100%; font-size: 0.78rem; text-transform: uppercase; cursor: pointer; margin-top: 0.4rem; border-radius: 6px; }
 .sub-add-btn:hover { border-color: var(--first-color); color: var(--first-color); }
 .edit-actions { display: flex; justify-content: space-between; gap: 1rem; margin-top: 2rem; flex-wrap: wrap; }
+
+/* Theme Color Swatches */
+.theme-swatches { display: flex; gap: 0.85rem; flex-wrap: wrap; margin-top: 0.5rem; margin-bottom: 0.5rem; }
+.theme-circle { width: 38px; height: 38px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s; }
+.theme-circle:hover { transform: scale(1.12); }
+.theme-circle.active { border-color: #ffffff; transform: scale(1.15); box-shadow: 0 0 12px rgba(255,255,255,0.6); }
 
 #loader { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--body-color); display: flex; justify-content: center; align-items: center; z-index: 9999; }
 .spinner { width: 50px; height: 50px; border: 3px solid rgba(255,255,255,0.1); border-radius: 50%; border-top-color: var(--first-color); animation: spin 1s ease-in-out infinite; }
@@ -44,6 +52,21 @@ input, button, textarea { border: none; outline: none; background: none; }
 
       <div class="edit-modal-content">
          <h2>Dashboard Settings</h2>
+
+         <!--==================== THEME COLOR SECTION ====================-->
+         <h3>Theme Color</h3>
+         <label>Choose Card Color</label>
+         <div class="theme-swatches" id="theme-swatches">
+            <button type="button" class="theme-circle active" data-hue="110" title="Green" style="background: hsl(110, 75%, 60%);"></button>
+            <button type="button" class="theme-circle" data-hue="325" title="Pink" style="background: hsl(325, 75%, 60%);"></button>
+            <button type="button" class="theme-circle" data-hue="215" title="Blue" style="background: hsl(215, 75%, 60%);"></button>
+            <button type="button" class="theme-circle" data-hue="50" title="Yellow" style="background: hsl(50, 75%, 60%);"></button>
+            <button type="button" class="theme-circle" data-hue="270" title="Purple" style="background: hsl(270, 75%, 60%);"></button>
+            <button type="button" class="theme-circle" data-hue="0" title="Red" style="background: hsl(0, 75%, 60%);"></button>
+            <button type="button" class="theme-circle" data-hue="180" title="Cyan" style="background: hsl(180, 75%, 60%);"></button>
+            <button type="button" class="theme-circle" data-hue="25" title="Orange" style="background: hsl(25, 75%, 60%);"></button>
+         </div>
+         <input type="hidden" id="edit-theme-hue" value="110">
          
          <!--==================== HERO SECTION ====================-->
          <h3>Hero Section</h3>
@@ -82,6 +105,11 @@ input, button, textarea { border: none; outline: none; background: none; }
          <h3>Skills Section (Max 5 Category Cards)</h3>
          <div id="edit-skills-container"></div>
          <button type="button" class="add-btn" id="add-skill-cat-btn">+ Add Skill Category Card</button>
+
+         <!--==================== CUSTOM SECTIONS ====================-->
+         <h3>Custom Sections (Optional - Max 3)</h3>
+         <div id="edit-custom-sections-container"></div>
+         <button type="button" class="add-btn" id="add-custom-section-btn">+ Add Custom Section</button>
 
          <!--==================== CONNECT WITH ME SECTION ====================-->
          <h3>Connect With Me</h3>
@@ -183,11 +211,13 @@ input, button, textarea { border: none; outline: none; background: none; }
                <button class="button" id="back-btn" style="background: transparent; border: 1px solid var(--text-color); color: var(--white-color); margin-left: .5rem;">Back</button>
              </div>`;
            loader.style.display = 'flex';
-           $('retry-btn').addEventListener('click', () => window.location.reload());$('back-btn').addEventListener('click', goToProfile);
+           $('retry-btn').addEventListener('click', () => window.location.reload());
+           $('back-btn').addEventListener('click', goToProfile);
          }
 
          /* ---------------- DEFAULT CONTENT ---------------- */
          const DEFAULTS = {
+           themeHue: 110,
            heroName: "Name Here",
            heroRoles: ["Role 1", "Role 2", "Role 3"],
            heroTag: "Add your tagline here.",
@@ -231,6 +261,23 @@ input, button, textarea { border: none; outline: none; background: none; }
              { label: "Instagram", url: "https://instagram.com" }
            ]
          };
+
+         /* ---------------- THEME PICKER LOGIC ---------------- */
+         function setThemeHue(hueVal) {
+           const parsed = parseInt(hueVal, 10);
+           const hue = Number.isNaN(parsed) ? DEFAULTS.themeHue : parsed;
+           $('edit-theme-hue').value = String(hue);
+           document.documentElement.style.setProperty('--hue', String(hue));
+           document.querySelectorAll('#theme-swatches .theme-circle').forEach(btn => {
+             btn.classList.toggle('active', parseInt(btn.getAttribute('data-hue'), 10) === hue);
+           });
+         }
+
+         document.querySelectorAll('#theme-swatches .theme-circle').forEach(btn => {
+           btn.addEventListener('click', () => {
+             setThemeHue(btn.getAttribute('data-hue'));
+           });
+         });
 
          /* ---------------- dynamic builders ---------------- */
          window.removeRow = function(el) { el.parentElement.remove(); };
@@ -356,7 +403,139 @@ input, button, textarea { border: none; outline: none; background: none; }
          }
          $('add-skill-cat-btn').addEventListener('click', () => addAdminSkillCategory());
 
-         // 5. Connect Redirect Buttons
+         // 5. Custom Sections (Max 3 Sections, 4 Layout Styles, Max 6 Cards/Blocks per Section)
+         function addCustomCardItemInput(itemsList, getLayoutType, itemText = '') {
+           if (getLayoutType() === 'services' && itemsList.querySelectorAll('.nested-row').length >= 5) {
+             alert("Maximum 5 bullet points allowed for Bullet Card style.");
+             return;
+           }
+           const row = document.createElement('div');
+           row.className = 'nested-row';
+           row.innerHTML = `
+             <input type="text" class="edit-input custom-card-item" placeholder="Tag or Bullet item">
+             <i class="ri-close-line nested-remove-btn" onclick="removeRow(this)"></i>
+           `;
+           row.querySelector('.custom-card-item').value = itemText || '';
+           itemsList.appendChild(row);
+         }
+
+         function updateCustomCardVisibility(cardEl, layout) {
+           const descEl = cardEl.querySelector('.custom-card-desc');
+           const imgWrap = cardEl.querySelector('.custom-card-img-wrap');
+           const linkWrap = cardEl.querySelector('.custom-card-link-wrap');
+           const itemsWrap = cardEl.querySelector('.custom-card-items-wrap');
+           const addItemBtn = cardEl.querySelector('.custom-add-item-btn');
+
+           descEl.style.display = (layout === 'services' || layout === 'work' || layout === 'text') ? '' : 'none';
+           imgWrap.style.display = (layout === 'work') ? '' : 'none';
+           linkWrap.style.display = (layout === 'work') ? '' : 'none';
+           itemsWrap.style.display = (layout === 'skills' || layout === 'services') ? '' : 'none';
+           if (addItemBtn) {
+             addItemBtn.innerText = layout === 'services' ? '+ Add Bullet Perk (Max 5)' : '+ Add Tag Item';
+           }
+         }
+
+         function addCustomSectionCard(cardsList, getLayoutType, cardData = {}) {
+           if (cardsList.querySelectorAll('.custom-card-box').length >= 6) {
+             alert("Maximum 6 cards/blocks allowed per custom section.");
+             return;
+           }
+           const box = document.createElement('div');
+           box.className = 'custom-card-box';
+           box.innerHTML = `
+              <i class="ri-close-line remove-btn" onclick="removeRow(this)"></i>
+              <input type="text" class="edit-input custom-card-title" placeholder="Card / Block Title">
+              <textarea class="edit-textarea custom-card-desc" placeholder="Description / Details"></textarea>
+              <div class="custom-card-img-wrap">
+                 <input type="text" class="edit-input custom-card-img" placeholder="Thumbnail Image URL">
+                 <input type="file" class="edit-input custom-card-img-file" accept="image/*" style="padding: 6px; font-size: 0.8rem; background: rgba(0,0,0,0.2);">
+              </div>
+              <div class="custom-card-link-wrap">
+                 <input type="text" class="edit-input custom-card-link" placeholder="Redirect Link (Optional)">
+              </div>
+              <div class="custom-card-items-wrap">
+                 <div class="custom-card-items-list"></div>
+                 <button type="button" class="sub-add-btn custom-add-item-btn">+ Add Item</button>
+              </div>
+           `;
+           box.querySelector('.custom-card-title').value = cardData.title || '';
+           box.querySelector('.custom-card-desc').value = cardData.description || '';
+           box.querySelector('.custom-card-img').value = cardData.imageUrl || '';
+           box.querySelector('.custom-card-link').value = cardData.link || '';
+
+           box.querySelector('.custom-card-img-file').addEventListener('change', function(e) {
+             const file = e.target.files[0];
+             if (!file) return;
+             compressImageFile(file, 500, (dataUrl) => {
+               box.querySelector('.custom-card-img').value = dataUrl;
+             });
+           });
+
+           const itemsList = box.querySelector('.custom-card-items-list');
+           const initialItems = Array.isArray(cardData.items) && cardData.items.length ? cardData.items : [''];
+           initialItems.forEach(it => addCustomCardItemInput(itemsList, getLayoutType, it));
+
+           box.querySelector('.custom-add-item-btn').addEventListener('click', () => {
+             addCustomCardItemInput(itemsList, getLayoutType, '');
+           });
+
+           updateCustomCardVisibility(box, getLayoutType());
+           cardsList.appendChild(box);
+         }
+
+         function addAdminCustomSection(secData = {}) {
+           const container = $('edit-custom-sections-container');
+           if (container.querySelectorAll('.custom-section-row').length >= 3) {
+             alert("Maximum 3 custom sections allowed.");
+             return;
+           }
+           const div = document.createElement('div');
+           div.className = 'dynamic-row custom-section-row';
+           div.innerHTML = `
+              <i class="ri-close-line remove-btn" onclick="removeRow(this)"></i>
+              <input type="text" class="edit-input custom-sec-title" placeholder="Section Title (e.g., Work Experience, Certifications)">
+              <input type="text" class="edit-input custom-sec-subtitle" placeholder="Section Subtitle (Optional)">
+              <label style="margin-top: 0.6rem;">Section Layout Style</label>
+              <select class="edit-input custom-sec-type">
+                 <option value="skills">1. Tag Card (Skills Style)</option>
+                 <option value="services">2. Info + Bullets Card (Services Style)</option>
+                 <option value="work">3. Image + Link Card (Work Style)</option>
+                 <option value="text">4. Simple Text Block (About Style)</option>
+              </select>
+              <div class="custom-sec-cards-list"></div>
+              <button type="button" class="sub-add-btn add-custom-card-btn">+ Add Card / Block to Section (Max 6)</button>
+           `;
+
+           const titleInp = div.querySelector('.custom-sec-title');
+           const subInp = div.querySelector('.custom-sec-subtitle');
+           const typeSelect = div.querySelector('.custom-sec-type');
+           const cardsList = div.querySelector('.custom-sec-cards-list');
+
+           titleInp.value = secData.sectionTitle || '';
+           subInp.value = secData.sectionSubtitle || '';
+           typeSelect.value = ['skills', 'services', 'work', 'text'].includes(secData.layoutType) ? secData.layoutType : 'skills';
+
+           const getLayoutType = () => typeSelect.value;
+
+           typeSelect.addEventListener('change', () => {
+             const currentLayout = getLayoutType();
+             cardsList.querySelectorAll('.custom-card-box').forEach(cardEl => {
+               updateCustomCardVisibility(cardEl, currentLayout);
+             });
+           });
+
+           const initialCards = Array.isArray(secData.cards) && secData.cards.length ? secData.cards : [{}];
+           initialCards.slice(0, 6).forEach(c => addCustomSectionCard(cardsList, getLayoutType, c));
+
+           div.querySelector('.add-custom-card-btn').addEventListener('click', () => {
+             addCustomSectionCard(cardsList, getLayoutType, {});
+           });
+
+           container.appendChild(div);
+         }
+         $('add-custom-section-btn').addEventListener('click', () => addAdminCustomSection());
+
+         // 6. Connect Redirect Buttons
          function addAdminLink(label = '', url = '') {
            const div = document.createElement('div');
            div.className = 'dynamic-row';
@@ -392,6 +571,8 @@ input, button, textarea { border: none; outline: none; background: none; }
 
          /* ---------------- load: owner-only with Default Fallbacks ---------------- */
          function populate(data) {
+           setThemeHue(data.themeHue !== undefined && data.themeHue !== null && data.themeHue !== '' ? data.themeHue : DEFAULTS.themeHue);
+
            $('edit-hero-name').value = data.heroName !== undefined ? data.heroName : DEFAULTS.heroName;
 
            const roles = Array.isArray(data.heroRoles) ? data.heroRoles : DEFAULTS.heroRoles;
@@ -422,6 +603,10 @@ input, button, textarea { border: none; outline: none; background: none; }
 
            const skillCategories = Array.isArray(data.skillCategories) ? data.skillCategories : DEFAULTS.skillCategories;
            skillCategories.slice(0, 5).forEach(c => addAdminSkillCategory(c.categoryTitle, c.skills));
+
+           if (Array.isArray(data.customSections)) {
+             data.customSections.slice(0, 3).forEach(sec => addAdminCustomSection(sec));
+           }
 
            $('edit-phone').value = data.phoneNumber !== undefined ? data.phoneNumber : DEFAULTS.phoneNumber;
 
@@ -482,6 +667,9 @@ input, button, textarea { border: none; outline: none; background: none; }
              $('edit-phone').focus();
              return;
            }
+
+           const parsedHue = parseInt($('edit-theme-hue').value, 10);
+           const themeHue = Number.isNaN(parsedHue) ? DEFAULTS.themeHue : parsedHue;
 
            const heroName = $('edit-hero-name').value.trim() || DEFAULTS.heroName;
            const heroRoles = [];
@@ -545,6 +733,55 @@ input, button, textarea { border: none; outline: none; background: none; }
              skillCategories.push({ categoryTitle, skills });
            });
 
+           const customSections = [];
+           document.querySelectorAll('#edit-custom-sections-container .custom-section-row').forEach(secRow => {
+             const sectionTitle = secRow.querySelector('.custom-sec-title').value.trim();
+             const sectionSubtitle = secRow.querySelector('.custom-sec-subtitle').value.trim();
+             const layoutType = secRow.querySelector('.custom-sec-type').value;
+             if (!sectionTitle) return;
+
+             const cards = [];
+             secRow.querySelectorAll('.custom-card-box').forEach(cardEl => {
+               const title = cardEl.querySelector('.custom-card-title').value.trim();
+               const description = cardEl.querySelector('.custom-card-desc').value.trim();
+               const rawImg = cardEl.querySelector('.custom-card-img').value.trim();
+               const rawLink = cardEl.querySelector('.custom-card-link').value.trim();
+               if (!title) return;
+
+               let imageUrl = '';
+               let link = '';
+               if (layoutType === 'work') {
+                 imageUrl = safeImageSrc(rawImg);
+                 if (rawImg && !imageUrl) badLinks.push(rawImg);
+                 link = normalizeUrl(rawLink, ['http:', 'https:']);
+                 if (rawLink && !link) badLinks.push(rawLink);
+               }
+
+               const items = [];
+               if (layoutType === 'skills' || layoutType === 'services') {
+                 cardEl.querySelectorAll('.custom-card-item').forEach(it => {
+                   const val = it.value.trim();
+                   if (val) items.push(val);
+                 });
+               }
+
+               cards.push({
+                 title,
+                 description,
+                 imageUrl,
+                 link,
+                 items: layoutType === 'services' ? items.slice(0, 5) : items
+               });
+             });
+
+             customSections.push({
+               sectionTitle,
+               sectionSubtitle,
+               layoutType,
+               cards: cards.slice(0, 6)
+             });
+           });
+
            const links = [];
            document.querySelectorAll('#edit-links-container .dynamic-row').forEach(row => {
              const label = row.querySelector('.link-label').value.trim();
@@ -562,6 +799,7 @@ input, button, textarea { border: none; outline: none; background: none; }
 
            // ownerUid and name are never sent: ownership can't be changed from this form.
            const payload = {
+             themeHue,
              heroName,
              heroRoles,
              heroTag,
@@ -572,6 +810,7 @@ input, button, textarea { border: none; outline: none; background: none; }
              projects: projects.slice(0, 10),
              services: services.slice(0, 6),
              skillCategories: skillCategories.slice(0, 5),
+             customSections: customSections.slice(0, 3),
              phoneNumber,
              links
            };
