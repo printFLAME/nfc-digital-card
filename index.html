@@ -277,7 +277,7 @@ img { display: block; max-width: 100%; height: auto; }
 .edit-fab { position: fixed; bottom: 2rem; left: 2rem; width: 60px; height: 60px; background: var(--first-color); color: var(--black-color); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.5); border: none; cursor: pointer; transition: transform 0.3s; animation: floatGear 3s ease-in-out infinite; text-decoration: none;}
 @keyframes floatGear { 0% {transform: translateY(0px);} 50% {transform: translateY(-8px);} 100% {transform: translateY(0px);} }
       </style>
-      <title>Responsive portfolio website | FLAME</title>
+      <title>Responsive portfolio website</title>
       <link rel="icon" href="data:,">
    </head>
    <body>
@@ -296,7 +296,7 @@ img { display: block; max-width: 100%; height: auto; }
       <!--==================== HEADER & NAV ====================-->
       <header class="header" id="header" style="display: none;">
          <nav class="nav container">
-            <a href="/index.html" class="nav__logo">FLAME</a>
+            <a href="/index.html" class="nav__logo">PROFILE</a>
             <div class="nav__menu" id="nav-menu">
                <ul class="nav__list">
                   <li><a href="#home" class="nav__link active-link">Home</a></li>
@@ -322,15 +322,14 @@ img { display: block; max-width: 100%; height: auto; }
          <section class="home section" id="home">
             <div class="home__container container grid">
                <div class="home__content">
-                  <h3 class="home__subtitle" id="hero-subtitle">Hi! I'm FLAME - Based in India</h3>
                   <div id="hero-title-container">
                      <h1 class="home__title">
-                        Creative Designer & <br>
-                        <span id="home-typed">Web Developer</span>
+                        Name Here <br>
+                        <span id="home-typed">Role 1</span>
                      </h1>
                   </div>
                   <p class="home__description" id="hero-description">
-                     I build designs and websites that solve problems, inspiring success.
+                     Add your tagline here.
                   </p>
                   
                   <!-- NEW HERO LOGIN BUTTON -->
@@ -356,14 +355,12 @@ img { display: block; max-width: 100%; height: auto; }
          <section class="about section" id="about">
             <div class="about__container container grid">
                <h2 class="about__title" id="about-title">
-                  About Me: Young freelancer who enjoys <span>web design</span> 
-                  and <span>development</span>, passionate about my work, disciplined, 
-                  and successful.
+                  About Me: A passionate professional dedicated to delivering <span>high-quality</span> 
+                  results and <span>impactful</span> solutions.
                </h2>
                <div class="about__data">
                   <p class="about__description" id="about-description">
-                     If you have a project in mind, check out my work and contact me 
-                     to work together. Best of luck!
+                     Add your detailed bio or description here.
                   </p>
                   <a href="#contact" class="button">Connect with me <i class="ri-arrow-right-line"></i></a>
                </div>
@@ -468,7 +465,7 @@ img { display: block; max-width: 100%; height: auto; }
       <!--==================== FOOTER ====================-->
       <footer class="footer" id="main-footer" style="display: none;">
          <div class="footer__container container">
-            <h2 class="footer__title">COLLABORATE WITH FLAME AND START YOUR <br> JOURNEY IN CREATIVE DESIGN TODAY.</h2>
+            <h2 class="footer__title">COLLABORATE AND START YOUR <br> JOURNEY TODAY.</h2>
             <ul class="footer__links">
                <li><a href="#work" class="footer__link">Work</a></li>
                <li><a href="#service" class="footer__link">Services</a></li>
@@ -479,7 +476,7 @@ img { display: block; max-width: 100%; height: auto; }
                <a href="#" class="footer__social-link"><i class="ri-instagram-fill"></i></a>
                <a href="#" class="footer__social-link"><i class="ri-github-fill"></i></a>
             </div>
-            <span class="footer__copy">&#169; All Rights Reserved By FLAME</span>
+            <span class="footer__copy">&#169; All Rights Reserved</span>
 
             <!-- OWNER LOGIN: always at the end of the page so the owner can sign in from any device -->
             <div style="margin-top: 1.5rem;">
@@ -521,7 +518,7 @@ const text = document.querySelector('.home__text-circular');
 if (text) { text.innerHTML = text.innerText.split('').map((char, i) => `<span style="transform:rotate(${i * 12}deg)">${char}</span>`).join(''); }
 
 /*=============== HOME TYPED JS ===============*/
-if (document.getElementById('home-typed')) { new Typed('#home-typed', { strings: ['Web Developer', 'Freelancer', 'Designer'], typeSpeed: 50, backSpeed: 50, loop: true }); }
+if (document.getElementById('home-typed')) { new Typed('#home-typed', { strings: ['Role 1', 'Role 2', 'Role 3'], typeSpeed: 50, backSpeed: 50, loop: true }); }
 
 /*=============== SCROLL SECTIONS ACTIVE LINK ===============*/
 const sections = document.querySelectorAll('section[id]')
