@@ -7,8 +7,6 @@
 
       <!--==================== REMIXICONS ====================-->
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.9.0/fonts/remixicon.css">
-
-      <!--==================== FULL 900-LINE CSS (UNCHANGED) ====================-->
       <style>
 /*=============== GOOGLE FONTS ===============*/
 @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Syne:wght@400..800&display=swap");
@@ -334,6 +332,11 @@ img { display: block; max-width: 100%; height: auto; }
                   <p class="home__description" id="hero-description">
                      I build designs and websites that solve problems, inspiring success.
                   </p>
+                  
+                  <!-- NEW HERO LOGIN BUTTON -->
+                  <div style="text-align: center; margin-top: 1.5rem;" id="hero-login-wrapper">
+                     <a href="#" id="hero-login-btn" class="button">Claim Card</a>
+                  </div>
                </div>
                
                <div class="home__image">
@@ -477,9 +480,6 @@ img { display: block; max-width: 100%; height: auto; }
                <a href="#" class="footer__social-link"><i class="ri-github-fill"></i></a>
             </div>
             <span class="footer__copy">&#169; All Rights Reserved By FLAME</span>
-            <div style="margin-top: 2rem;">
-               <a href="#" id="footer-login" style="color: var(--text-color); text-decoration: none; font-size: var(--small-font-size);"><i class="ri-lock-2-line"></i> Admin Login</a>
-            </div>
          </div>
       </footer>
       
@@ -590,7 +590,7 @@ window.addEventListener('scroll', scrollUp)
          const publicProjects = $('projects-wrapper');
          const publicLinks = $('contact-links-wrapper');
          const editFab = $('edit-fab');
-         const authLink = $('footer-login'); // footer link: "Login / Claim Card" (unclaimed) or "Logout" (owner)
+         const authLink = $('hero-login-btn'); // Hero button: "Claim Card" (strangers) or "Logout" (owner)
 
          // Errors are shown INSIDE the loader overlay, so the page can never end up as an empty black screen.
          function showOverlay(html) { loader.innerHTML = html; loader.style.display = 'flex'; }
@@ -664,9 +664,8 @@ window.addEventListener('scroll', scrollUp)
          }
 
          /* ---------------- who sees what ----------------
-            Unclaimed card            -> default page + "Login / Claim Card"
-            Claimed, viewer = owner   -> Settings gear + "Logout"
-            Claimed, anyone else      -> read-only: no gear, no login/logout                        */
+            Unclaimed / Stranger      -> "Claim Card" (routes to login to check ownership)
+            Claimed, viewer = owner   -> Settings gear + "Logout"  */
          let authMode = 'none';
 
          function applyAccessControls(card, isOwner) {
@@ -677,14 +676,9 @@ window.addEventListener('scroll', scrollUp)
              editFab.style.display = 'flex';
              authMode = 'logout';
              authLink.innerHTML = '<i class="ri-logout-box-r-line"></i> Logout';
-             authLink.style.display = '';
-           } else if (!card) {
-             authMode = 'claim';
-             authLink.innerHTML = '<i class="ri-lock-2-line"></i> Login / Claim Card';
-             authLink.style.display = '';
            } else {
-             authMode = 'none';
-             authLink.style.display = 'none';
+             authMode = 'claim';
+             authLink.innerHTML = 'Claim Card';
            }
          }
 
