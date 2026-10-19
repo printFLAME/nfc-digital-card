@@ -178,12 +178,35 @@ input, button, textarea, select { border: none; outline: none; background: none;
              const img = new Image();
              img.onload = function() {
                const canvas = document.createElement('canvas');
-               const scaleSize = maxWidth / img.width;
-               canvas.width = maxWidth;
-               canvas.height = img.height * scaleSize;
+               
+               // Automatically upgrades 400px/500px limits to 1200px HD
+               const targetMax = Math.max(maxWidth || 1200, 1200);
+               let width = img.width;
+               let height = img.height;
+
+               // Only shrink if the uploaded photo is wider than 1200px (prevents stretching smaller images)
+               if (width > targetMax) {
+                 height = Math.round(height * (targetMax / width));
+                 width = targetMax;
+               }
+
+               canvas.width = width;
+               canvas.height = height;
+
                const ctx = canvas.getContext('2d');
+               
+               // Enable high-quality smoothing so edges and text stay sharp
+               ctx.imageSmoothingEnabled = true;
+               ctx.imageSmoothingQuality = 'high';
+               
                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-               callback(canvas.toDataURL('image/jpeg', 0.85));
+
+               // Export as sharp WebP (smaller file size for Firebase), with automatic fallback to 92% JPEG
+               let dataUrl = canvas.toDataURL('image/webp', 0.92);
+               if (!dataUrl.startsWith('data:image/webp')) {
+                 dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+               }
+               callback(dataUrl);
              };
              img.onerror = () => alert("That file couldn't be read as an image. Please choose another photo.");
              img.src = event.target.result;
