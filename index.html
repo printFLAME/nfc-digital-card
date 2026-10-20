@@ -291,6 +291,22 @@ img { display: block; max-width: 100%; height: auto; }
   .contact__container { padding-top: 2rem; }
 }
 
+/*==================== QUICK ACTIONS + SAVE CONTACT ====================*/
+.home__actions { display: grid; justify-items: center; gap: 1.25rem; margin-top: 1.5rem; }
+.quick-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: .75rem; }
+.quick-action {
+  display: inline-flex; flex-direction: column; align-items: center; row-gap: .35rem;
+  min-width: 76px; padding: .9rem .75rem; border-radius: 1.25rem;
+  background-color: var(--container-color); color: var(--white-color);
+  font-size: var(--small-font-size); font-weight: var(--font-medium);
+  transition: transform .3s, box-shadow .3s; cursor: none;
+}
+.quick-action i { font-size: 1.4rem; color: var(--first-color); }
+.quick-action:hover { transform: translateY(-.25rem); box-shadow: 0 8px 24px hsla(var(--hue), 75%, 60%, 0.2); }
+.button:focus-visible, .quick-action:focus-visible { outline: 2px solid var(--first-color); outline-offset: 3px; }
+@media (width <= 1150px) { .quick-action { cursor: pointer; } .button { cursor: pointer; } }
+@media (width >= 1150px) { .home__actions { justify-items: start; } .quick-actions { justify-content: flex-start; } }
+
 /*==================== ADMIN & SETUP STYLES ====================*/
 #loader { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--body-color); display: flex; justify-content: center; align-items: center; z-index: 9999; }
 .spinner { width: 50px; height: 50px; border: 3px solid rgba(255,255,255,0.1); border-radius: 50%; border-top-color: var(--first-color); animation: spin 1s ease-in-out infinite; }
@@ -357,6 +373,17 @@ img { display: block; max-width: 100%; height: auto; }
                   <!-- NEW HERO LOGIN BUTTON -->
                   <div style="text-align: center; margin-top: 1.5rem;" id="hero-login-wrapper">
                      <a href="#" id="hero-login-btn" class="button">Claim Card</a>
+                  </div>
+
+                  <!-- SAVE CONTACT + QUICK ACTIONS: shown only on a claimed card (filled in by renderActions) -->
+                  <div class="home__actions" id="hero-actions" style="display: none;">
+                     <button type="button" class="button" id="save-contact-btn"><i class="ri-user-add-line"></i><span>Save Contact</span></button>
+                     <div class="quick-actions">
+                        <a href="#" class="quick-action" id="qa-call" style="display: none;"><i class="ri-phone-line"></i><span>Call</span></a>
+                        <a href="#" class="quick-action" id="qa-whatsapp" target="_blank" rel="noopener noreferrer" style="display: none;"><i class="ri-whatsapp-line"></i><span>WhatsApp</span></a>
+                        <a href="#" class="quick-action" id="qa-email" style="display: none;"><i class="ri-mail-line"></i><span>Email</span></a>
+                        <button type="button" class="quick-action" id="qa-share"><i class="ri-share-forward-line"></i><span>Share</span></button>
+                     </div>
                   </div>
                </div>
                
@@ -926,6 +953,128 @@ window.addEventListener('scroll', scrollUp)
            }
          }
 
+         /* ---------------- quick actions + Save Contact (vCard) ----------------
+           Built only from fields the card already has (heroName, heroRoles, heroTag, phoneNumber, links, avatar),
+           so nothing changes in admin.html or in the Firestore data. */
+         let currentCard = null;
+         let contactPhoto = null; // base64 JPEG, prepared in advance so the click handler stays synchronous
+                                  // (iOS Safari can block a download that only starts after an await)
+
+         const cardUrl = () => `${window.location.origin}${window.location.pathname}?user=${slugParam}`;
+
+         // Briefly swap a button's label, e.g. "Save Contact" -> "Saved".
+         function flash(btn, label) {
+           const span = btn.querySelector('span');
+           if (!span) return;
+           const original = span.dataset.label || span.textContent;
+           span.dataset.label = original;
+           span.textContent = label;
+           setTimeout(() => { span.textContent = original; }, 1600);
+         }
+
+         const vEsc = (v) => String(v ?? '').replace(/\\/g, '\\\\').replace(/\r?\n/g, '\\n').replace(/;/g, '\\;').replace(/,/g, '\\,');
+
+         // vCard lines should be folded at 75 chars; only the (long, ASCII-only) PHOTO line needs it.
+         function vFold(line) {
+           let out = line.slice(0, 75), rest = line.slice(75);
+           while (rest.length) { out += '\r\n ' + rest.slice(0, 74); rest = rest.slice(74); }
+           return out;
+         }
+
+         function buildVCard(card) {
+           const name = String(card.heroName || '').trim() || 'Contact';
+           const parts = name.split(/\s+/);
+           const family = parts.length > 1 ? parts.pop() : '';
+           const given = parts.join(' ');
+           const roles = (Array.isArray(card.heroRoles) ? card.heroRoles : []).map(r => String(r || '').trim()).filter(Boolean);
+           const phone = String(card.phoneNumber || '').replace(/[^\d+]/g, '');
+           const tag = String(card.heroTag !== undefined ? card.heroTag : (card.description || '')).trim();
+
+           const lines = ['BEGIN:VCARD', 'VERSION:3.0', `N:${vEsc(family)};${vEsc(given)};;;`, `FN:${vEsc(name)}`];
+           if (roles[0]) lines.push(`TITLE:${vEsc(roles[0])}`);
+           if (phone) lines.push(`TEL;TYPE=CELL,VOICE:${phone}`);
+
+           const seen = new Set();
+           (Array.isArray(card.links) ? card.links : []).forEach((item) => {
+             const url = normalizeUrl(item && item.url);
+             if (!url || seen.has(url)) return;
+             seen.add(url);
+             if (/^mailto:/i.test(url)) lines.push(`EMAIL;TYPE=INTERNET:${vEsc(url.slice(7).split('?')[0])}`);
+             else if (/^https?:/i.test(url)) lines.push(`URL:${url}`);
+           });
+           lines.push(`URL:${cardUrl()}`);
+           if (tag) lines.push(`NOTE:${vEsc(tag)}`);
+           if (contactPhoto) lines.push(vFold(`PHOTO;ENCODING=b;TYPE=JPEG:${contactPhoto}`));
+           lines.push('END:VCARD');
+           return lines.join('\r\n') + '\r\n';
+         }
+
+         function downloadVCard(card) {
+           const name = String(card.heroName || '').trim();
+           const fileName = (name.replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-') || 'contact') + '.vcf';
+           const blob = new Blob([buildVCard(card)], { type: 'text/vcard;charset=utf-8' });
+           const url = URL.createObjectURL(blob);
+           const a = document.createElement('a');
+           a.href = url;
+           a.download = fileName;
+           document.body.appendChild(a);
+           a.click();
+           a.remove();
+           setTimeout(() => URL.revokeObjectURL(url), 10000);
+         }
+
+         // Square 256px JPEG of the profile photo. Images that block cross-site reading are simply skipped.
+         async function preparePhoto(src) {
+           if (!src) return null;
+           try {
+             const res = await fetch(src);
+             if (!res.ok) return null;
+             const bmp = await createImageBitmap(await res.blob());
+             const side = Math.min(bmp.width, bmp.height), size = 256;
+             const canvas = document.createElement('canvas');
+             canvas.width = canvas.height = size;
+             canvas.getContext('2d').drawImage(bmp, (bmp.width - side) / 2, (bmp.height - side) / 2, side, side, 0, 0, size, size);
+             return canvas.toDataURL('image/jpeg', 0.82).split(',')[1] || null;
+           } catch (_) { return null; }
+         }
+
+         function renderActions(card) {
+           const box = $('hero-actions');
+           if (!card || !box) return; // unclaimed card: nothing to save yet
+           currentCard = card;
+
+           const phone = String(card.phoneNumber || '').replace(/[^\d+]/g, '');
+           const mail = (Array.isArray(card.links) ? card.links : [])
+             .map(l => normalizeUrl(l && l.url)).find(u => /^mailto:/i.test(u));
+
+           const call = $('qa-call'), wa = $('qa-whatsapp'), email = $('qa-email');
+           if (phone.replace(/\D/g, '').length >= 5) { call.href = `tel:${phone}`; call.style.display = 'inline-flex'; }
+           // WhatsApp needs the country code, so it only shows for numbers written like +91...
+           if (/^\+\d{8,15}$/.test(phone)) { wa.href = `https://wa.me/${phone.slice(1)}`; wa.style.display = 'inline-flex'; }
+           if (mail) { email.href = mail; email.style.display = 'inline-flex'; }
+
+           box.style.display = '';
+           preparePhoto(safeImageSrc(card.profileImageUrl || card.avatar)).then((p) => { contactPhoto = p; });
+         }
+
+         $('save-contact-btn').addEventListener('click', (e) => {
+           if (!currentCard) return;
+           try { downloadVCard(currentCard); flash(e.currentTarget, 'Saved'); }
+           catch (err) { console.error('vCard error:', err); flash(e.currentTarget, 'Try again'); }
+         });
+
+         $('qa-share').addEventListener('click', async (e) => {
+           if (!currentCard) return;
+           const btn = e.currentTarget, url = cardUrl();
+           const name = String(currentCard.heroName || '').trim() || 'Digital card';
+           if (navigator.share) {
+             try { await navigator.share({ title: name, text: `${name} - digital card`, url }); } catch (_) { /* cancelled */ }
+             return;
+           }
+           try { await navigator.clipboard.writeText(url); flash(btn, 'Link copied'); }
+           catch (_) { window.prompt('Copy this link', url); }
+         });
+
          /* ---------------- who sees what ----------------
             Unclaimed card            -> hero "Claim Card" (click -> Google login -> claims it)
             Claimed card, ANY viewer  -> hero "Claim Card" is hidden. Read-only profile.
@@ -1136,6 +1285,7 @@ window.addEventListener('scroll', scrollUp)
              const isOwner = !!(card && user && card.ownerUid && card.ownerUid === user.uid);
 
              renderProfile(card, isOwner);
+             renderActions(card);
              applyAccessControls(card, isOwner);
              revealPage();
            } catch (error) {
