@@ -205,6 +205,28 @@ img { display: block; max-width: 100%; height: auto; }
 .work__number { color: var(--first-color); font-size: var(--h2-font-size); margin-bottom: .5rem; }
 .work__name { font-size: var(--h3-font-size); margin-bottom: .5rem; }
 
+/*=============== WORK SECTION (HORIZONTAL AUTO-SCROLL SHOWCASE) ===============
+   Only the main #projects-wrapper becomes a horizontal scroller. The cards keep exactly the same
+   look and the same width they had in the grid (1 / 2 / 3 per view). */
+#projects-wrapper {
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-top: .75rem; margin-top: -.75rem;  /* room for the card hover-lift, without moving the layout */
+  scroll-behavior: auto;                     /* html { scroll-behavior: smooth } must not animate the auto-scroll */
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+#projects-wrapper::-webkit-scrollbar { display: none; }
+#projects-wrapper > .work__card { flex: 0 0 100%; }
+@media (min-width: 540px) {
+  #projects-wrapper > .work__card { flex-basis: calc((100% - 1.5rem) / 2); }
+}
+@media (min-width: 1150px) {
+  #projects-wrapper > .work__card { flex-basis: calc((100% - 3rem) / 3); }
+}
+
 /*=============== SERVICES SECTION ===============*/
 .services__container { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
 .services__card { padding: 2rem 1.5rem; }
@@ -360,7 +382,7 @@ img { display: block; max-width: 100%; height: auto; }
 
          <!--==================== WORK SECTION ====================-->
          <section class="work section" id="work">
-            <h2 class="section__title">View My <span>Work</span></h2>
+            <h2 class="section__title">My <span>Projects</span></h2>
             <div class="work__container container" id="projects-wrapper">
                <article class="work__card">
                   <a href="#" class="work__link">
@@ -370,6 +392,33 @@ img { display: block; max-width: 100%; height: auto; }
                   <h3 class="work__number">01</h3>
                   <h2 class="work__name">Restaurant Website</h2>
                   <p class="work__description">Professional website using HTML, CSS, and JavaScript.</p>
+               </article>
+               <article class="work__card">
+                  <a href="#" class="work__link">
+                     <img src="https://images.unsplash.com/photo-1517694712202-14dd9538aa97?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80" alt="Work" class="work__img">
+                     <i class="ri-arrow-right-up-line work__icon"></i>
+                  </a>
+                  <h3 class="work__number">02</h3>
+                  <h2 class="work__name">Portfolio Website</h2>
+                  <p class="work__description">Clean, responsive portfolio that showcases projects and skills.</p>
+               </article>
+               <article class="work__card">
+                  <a href="#" class="work__link">
+                     <img src="https://images.unsplash.com/photo-1498050108023-c5249f4df085?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80" alt="Work" class="work__img">
+                     <i class="ri-arrow-right-up-line work__icon"></i>
+                  </a>
+                  <h3 class="work__number">03</h3>
+                  <h2 class="work__name">Online Store</h2>
+                  <p class="work__description">Fast e-commerce experience with product pages and simple checkout.</p>
+               </article>
+               <article class="work__card">
+                  <a href="#" class="work__link">
+                     <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80" alt="Work" class="work__img">
+                     <i class="ri-arrow-right-up-line work__icon"></i>
+                  </a>
+                  <h3 class="work__number">04</h3>
+                  <h2 class="work__name">Business Dashboard</h2>
+                  <p class="work__description">Clear dashboard with charts and reports for everyday decisions.</p>
                </article>
             </div>
          </section>
@@ -735,11 +784,8 @@ window.addEventListener('scroll', scrollUp)
                       <p class="work__description">${esc(desc)}</p>
                    </article>`;
                }).join('');
-             } else if (isOwner) {
-               publicProjects.innerHTML = `<p style="text-align:center; color:#888;">Add your first project via the Admin Settings gear.</p>`;
-             } else {
-               publicProjects.innerHTML = '';
              }
+             // No projects yet: the 4 default work cards from the HTML stay in place.
            }
 
            // 4. SERVICES SECTION (Max 6)
@@ -926,6 +972,127 @@ window.addEventListener('scroll', scrollUp)
            }
          });
 
+/* ---------------- WORK SECTION: slow auto-scrolling showcase ----------------
+           Scrolls by itself, very slowly. As soon as the visitor touches / drags / hovers / scrolls it, it
+           stops and behaves like a normal scrollable row. After WORK_RESUME_AFTER_MS without any
+           interaction it starts drifting again. Cards are duplicated once so the loop has no jump. */
+         const WORK_SPEED_PX_PER_SEC = 25;     // "very slowly"
+         const WORK_RESUME_AFTER_MS = 7000;    // idle time before it starts scrolling again
+         const WORK_FALLBACK_IMG = 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80';
+
+         function setupWorkCarousel() {
+           const scroller = $('projects-wrapper');
+           if (!scroller) return;
+
+           // A broken project image falls back to the default one instead of a broken-image icon.
+           const useFallback = (img) => {
+             if (img && img.tagName === 'IMG' && !img.dataset.fallback) {
+               img.dataset.fallback = '1';
+               img.src = WORK_FALLBACK_IMG;
+             }
+           };
+           scroller.addEventListener('error', (e) => useFallback(e.target), true);
+           // ...including images that already failed before this ran (the default cards start loading while the page boots).
+           scroller.querySelectorAll('img').forEach((img) => { if (img.complete && img.naturalWidth === 0) useFallback(img); });
+
+           const originals = Array.from(scroller.children).filter(el => el.classList.contains('work__card'));
+           if (originals.length < 2) return; // nothing to scroll
+
+           const clones = originals.map((card) => {
+             const c = card.cloneNode(true);
+             c.setAttribute('aria-hidden', 'true');
+             c.querySelectorAll('a, button').forEach(el => el.setAttribute('tabindex', '-1'));
+             return c;
+           });
+           clones.forEach(c => scroller.appendChild(c));
+
+           const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+           let setWidth = 0, scrollable = false, inView = false;
+           let pressed = false, hovering = false, drag = null, suppressClick = false;
+           let lastInteraction = -Infinity, pos = 0, lastWritten = 0, synced = false, lastFrame = 0, rafId = 0;
+
+           const markInteraction = () => { lastInteraction = performance.now(); };
+
+           // If every card already fits on screen there is nothing to scroll: show them as a normal static row.
+           function measure() {
+             clones.forEach(c => { c.style.display = ''; });
+             const first = originals[0].getBoundingClientRect();
+             const last = originals[originals.length - 1].getBoundingClientRect();
+             const firstClone = clones[0].getBoundingClientRect();
+             const fits = (last.right - first.left) <= scroller.clientWidth + 1;
+             setWidth = firstClone.left - first.left;          // width of one full set of cards incl. the gap
+             scrollable = !fits && setWidth > 0;
+             if (!scrollable) {
+               clones.forEach(c => { c.style.display = 'none'; });
+               lastWritten = 0;
+               scroller.scrollLeft = 0;
+             } else if (scroller.scrollLeft >= setWidth) {
+               lastWritten = scroller.scrollLeft % setWidth;
+               scroller.scrollLeft = lastWritten;
+             }
+           }
+
+           function tick(now) {
+             rafId = requestAnimationFrame(tick);
+             const dt = Math.min(now - lastFrame, 100);
+             lastFrame = now;
+
+             if (pressed || hovering || drag || now - lastInteraction < WORK_RESUME_AFTER_MS) { synced = false; return; }
+
+             if (!synced) { pos = scroller.scrollLeft; synced = true; }
+             pos += WORK_SPEED_PX_PER_SEC * dt / 1000;
+             if (pos >= setWidth) pos -= setWidth;              // seamless wrap: the 2nd set looks identical to the 1st
+             lastWritten = pos;
+             scroller.scrollLeft = pos;
+           }
+
+           function updateLoop() {
+             const shouldRun = scrollable && inView && !reduceMotion;
+             if (shouldRun && !rafId) { lastFrame = performance.now(); rafId = requestAnimationFrame(tick); }
+             else if (!shouldRun && rafId) { cancelAnimationFrame(rafId); rafId = 0; synced = false; }
+           }
+
+           // --- the visitor interacts: stop auto-scrolling, let them scroll normally ---
+           // Scrolls that we did not cause ourselves (touch swipe, momentum, trackpad, keyboard, scrollbar) count as interaction.
+           scroller.addEventListener('scroll', () => {
+             if (Math.abs(scroller.scrollLeft - lastWritten) > 2) markInteraction();
+           }, { passive: true });
+           scroller.addEventListener('wheel', (e) => {
+             if (Math.abs(e.deltaX) > Math.abs(e.deltaY) || e.shiftKey) markInteraction();
+           }, { passive: true });
+           scroller.addEventListener('focusin', markInteraction);
+           scroller.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') hovering = true; });
+           scroller.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') { hovering = false; markInteraction(); } });
+
+           scroller.addEventListener('pointerdown', (e) => {
+             pressed = true; markInteraction();
+             if (e.pointerType === 'mouse' && e.button === 0) drag = { startX: e.clientX, startLeft: scroller.scrollLeft, moved: false };
+           });
+           window.addEventListener('pointermove', (e) => {
+             if (!drag) return;
+             const dx = e.clientX - drag.startX;
+             if (!drag.moved && Math.abs(dx) > 5) { drag.moved = true; scroller.style.userSelect = 'none'; }
+             if (drag.moved) { scroller.scrollLeft = drag.startLeft - dx; markInteraction(); }
+           });
+           const endPress = () => {
+             if (!pressed && !drag) return;
+             pressed = false; markInteraction();
+             if (drag && drag.moved) { suppressClick = true; setTimeout(() => { suppressClick = false; }, 0); }
+             scroller.style.userSelect = '';
+             drag = null;
+           };
+           window.addEventListener('pointerup', endPress);
+           window.addEventListener('pointercancel', endPress);
+           // A mouse drag must not open the project link it ended on; native image/link dragging would also fight the drag-scroll.
+           scroller.addEventListener('click', (e) => { if (suppressClick) { e.preventDefault(); e.stopPropagation(); } }, true);
+           scroller.addEventListener('dragstart', (e) => e.preventDefault());
+
+           // Only animate while the section is on screen.
+           new IntersectionObserver((entries) => { inView = entries[0].isIntersecting; updateLoop(); }).observe(scroller);
+           new ResizeObserver(() => { measure(); updateLoop(); }).observe(scroller);
+           measure();
+         }
+
          function revealPage() {
            loader.style.display = 'none';
            mainHeader.style.display = 'block';
@@ -938,10 +1105,16 @@ window.addEventListener('scroll', scrollUp)
              sr.reveal(`.home__content, .services__container, .skills__container, .footer__container`);
              sr.reveal(`.home__image, .about__data, .contact__container`, {origin: 'right'});
              sr.reveal(`.about__title`, {origin: 'left'});
-             sr.reveal(`.work__card`, {interval: 100});
+             // The main work row scrolls sideways, so it is revealed as ONE block (cards that sit off-screen inside
+             // a scroller would otherwise never get revealed). Cards of custom work-style sections reveal as before.
+             sr.reveal(`.work__container:not(#projects-wrapper) .work__card`, {interval: 100});
+             sr.reveal(`#projects-wrapper`);
            } catch (err) {
              console.warn('ScrollReveal unavailable:', err);
            }
+
+           // Work section: slow auto-scrolling showcase (isolated so it can never break the page).
+           try { setupWorkCarousel(); } catch (err) { console.warn('Work carousel unavailable:', err); }
          }
 
          async function init() {
