@@ -419,7 +419,7 @@ img { display: block; max-width: 100%; height: auto; }
 
          <!--==================== WORK SECTION ====================-->
          <section class="work section" id="work">
-            <h2 class="section__title">My <span>Projects</span></h2>
+            <h2 class="section__title" id="work-title">My <span>Projects</span></h2>
             <div class="work__container container" id="projects-wrapper">
                <article class="work__card">
                   <a href="#" class="work__link">
@@ -462,7 +462,7 @@ img { display: block; max-width: 100%; height: auto; }
 
          <!--==================== SERVICES SECTION ====================-->
          <section class="services section" id="service">
-            <h2 class="section__title"><span>My</span> Services</h2>
+            <h2 class="section__title" id="service-title"><span>My</span> Services</h2>
             <div class="services__container container grid" id="services-wrapper">
                
                <article class="services__card">
@@ -491,7 +491,7 @@ img { display: block; max-width: 100%; height: auto; }
 
          <!--==================== SKILLS SECTION ====================-->
          <section class="skills section" id="skills">
-            <h2 class="section__title">My <span>Skills</span></h2>
+            <h2 class="section__title" id="skills-title">My <span>Skills</span></h2>
             <p class="skills__description container">My skills are those I've learned and developed over the years. By studying, focusing, and being consistent in what I love most.</p>
             
             <div class="skills__container container grid" id="skills-wrapper">
@@ -540,7 +540,7 @@ img { display: block; max-width: 100%; height: auto; }
 
          <!--==================== CONTACT SECTION ====================-->
          <section class="contact section" id="contact">
-            <h2 class="section__title">Connect <span>With Me</span></h2>
+            <h2 class="section__title" id="contact-title">Connect <span>With Me</span></h2>
             
             <div class="contact__container container">
                <div class="contact__links" id="contact-links-wrapper">
@@ -1016,6 +1016,46 @@ window.addEventListener('scroll', scrollUp)
            }
          }
 
+         /* ---------------- section headings + deleted sections ----------------
+           Same rule as custom sections: the last word of a renamed heading is shown in the theme colour.
+           A heading that was never renamed keeps its original markup (so "My Services" looks exactly as before). */
+         const DEFAULT_HEADINGS = {
+           work:    { text: 'My Projects',     html: 'My <span>Projects</span>' },
+           service: { text: 'My Services',     html: '<span>My</span> Services' },
+           skills:  { text: 'My Skills',       html: 'My <span>Skills</span>' },
+           contact: { text: 'Connect With Me', html: 'Connect <span>With Me</span>' }
+         };
+         function headingHtml(key, raw) {
+           const text = String(raw ?? '').trim().replace(/\s+/g, ' ');
+           const def = DEFAULT_HEADINGS[key];
+           if (!text || text === def.text) return def.html;
+           const words = text.split(' ');
+           return words.length > 1
+             ? `${esc(words.slice(0, -1).join(' '))} <span>${esc(words[words.length - 1])}</span>`
+             : `<span>${esc(text)}</span>`;
+         }
+
+         function applySectionSettings(card) {
+           if (!card) return; // unclaimed card keeps the default page
+           [['work', 'work-title', 'workTitle'], ['service', 'service-title', 'serviceTitle'],
+            ['skills', 'skills-title', 'skillsTitle'], ['contact', 'contact-title', 'connectTitle']].forEach(([key, id, field]) => {
+             const el = $(id);
+             if (el) el.innerHTML = headingHtml(key, card[field]);
+           });
+
+           // Sections the owner deleted: hide the section plus its menu and footer links.
+           const hidden = Array.isArray(card.hiddenSections) ? card.hiddenSections : [];
+           [['work', '#work'], ['services', '#service'], ['skills', '#skills']].forEach(([key, hash]) => {
+             if (!hidden.includes(key)) return;
+             const section = document.querySelector(`section${hash}`);
+             if (section) section.style.display = 'none';
+             document.querySelectorAll(`a[href="${hash}"]`).forEach((a) => {
+               const item = a.closest('li');
+               if (item) item.style.display = 'none';
+             });
+           });
+         }
+
          /* ---------------- who sees what ----------------
             Unclaimed card            -> hero "Claim Card" (click -> Google login -> claims it)
             Claimed card, ANY viewer  -> hero "Claim Card" is hidden. Read-only profile.
@@ -1204,7 +1244,7 @@ window.addEventListener('scroll', scrollUp)
            }
 
            // Work section: slow auto-scrolling showcase (isolated so it can never break the page).
-           try { setupWorkCarousel(); } catch (err) { console.warn('Work carousel unavailable:', err); }
+           try { if ($('work') && $('work').style.display !== 'none') setupWorkCarousel(); } catch (err) { console.warn('Work carousel unavailable:', err); }
          }
 
          async function init() {
@@ -1226,6 +1266,7 @@ window.addEventListener('scroll', scrollUp)
              const isOwner = !!(card && user && card.ownerUid && card.ownerUid === user.uid);
 
              renderProfile(card, isOwner);
+             applySectionSettings(card);
              applyAccessControls(card, isOwner);
              revealPage();
            } catch (error) {

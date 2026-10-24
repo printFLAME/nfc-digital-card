@@ -42,6 +42,14 @@ input, button, textarea, select { border: none; outline: none; background: none;
 .theme-circle:hover { transform: scale(1.12); }
 .theme-circle.active { border-color: #ffffff; transform: scale(1.15); box-shadow: 0 0 12px rgba(255,255,255,0.6); }
 
+/* Built-in sections: editable heading + one-click delete cross */
+.sec-block > h3 { position: relative; padding-right: 2rem; }
+.sec-block > h3 .remove-btn { top: 50%; right: 0; transform: translateY(-50%); }
+.sec-block > h3 .remove-btn:focus-visible { outline: 2px solid var(--first-color); border-radius: 4px; }
+.title-preview { font-family: "Syne", var(--body-font); font-weight: 600; font-size: 1.4rem; line-height: 1.25; color: var(--white-color); margin: 0 0 1rem; word-break: break-word; }
+.title-preview span { color: var(--first-color); }
+.title-preview:empty { display: none; }
+
 #loader { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--body-color); display: flex; justify-content: center; align-items: center; z-index: 9999; }
 .spinner { width: 50px; height: 50px; border: 3px solid rgba(255,255,255,0.1); border-radius: 50%; border-top-color: var(--first-color); animation: spin 1s ease-in-out infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -92,19 +100,43 @@ input, button, textarea, select { border: none; outline: none; background: none;
          <textarea id="edit-about-title" class="edit-textarea" placeholder="About me section"></textarea>
          
          <!--==================== WORK / PROJECTS SECTION ====================-->
-         <h3>Work / Projects (Max 10)</h3>
-         <div id="edit-projects-container"></div>
-         <button type="button" class="add-btn" id="add-project-btn">+ Add Project</button>
+         <div class="sec-block" id="sec-work">
+            <h3>Work / Projects (Max 10)<i class="ri-close-line remove-btn sec-remove-btn" role="button" tabindex="0" title="Delete this whole section" aria-label="Delete the whole Work / Projects section"></i></h3>
+            <div class="sec-body">
+               <label>Section Heading (last word uses theme colour)</label>
+               <input type="text" id="edit-work-title" class="edit-input" maxlength="40" placeholder="My Projects">
+               <div class="title-preview" id="preview-work-title"></div>
+               <div id="edit-projects-container"></div>
+               <button type="button" class="add-btn" id="add-project-btn">+ Add Project</button>
+            </div>
+            <button type="button" class="add-btn sec-restore-btn" style="display: none;">+ Add Work / Projects Section Back</button>
+         </div>
 
          <!--==================== SERVICES SECTION ====================-->
-         <h3>Services Section (Max 6)</h3>
-         <div id="edit-services-container"></div>
-         <button type="button" class="add-btn" id="add-service-btn">+ Add Service</button>
+         <div class="sec-block" id="sec-services">
+            <h3>Services Section (Max 6)<i class="ri-close-line remove-btn sec-remove-btn" role="button" tabindex="0" title="Delete this whole section" aria-label="Delete the whole Services section"></i></h3>
+            <div class="sec-body">
+               <label>Section Heading (last word uses theme colour)</label>
+               <input type="text" id="edit-service-title" class="edit-input" maxlength="40" placeholder="My Services">
+               <div class="title-preview" id="preview-service-title"></div>
+               <div id="edit-services-container"></div>
+               <button type="button" class="add-btn" id="add-service-btn">+ Add Service</button>
+            </div>
+            <button type="button" class="add-btn sec-restore-btn" style="display: none;">+ Add Services Section Back</button>
+         </div>
 
          <!--==================== SKILLS SECTION ====================-->
-         <h3>Skills Section (Max 5 Category Cards)</h3>
-         <div id="edit-skills-container"></div>
-         <button type="button" class="add-btn" id="add-skill-cat-btn">+ Add Skill Category Card</button>
+         <div class="sec-block" id="sec-skills">
+            <h3>Skills Section (Max 5 Category Cards)<i class="ri-close-line remove-btn sec-remove-btn" role="button" tabindex="0" title="Delete this whole section" aria-label="Delete the whole Skills section"></i></h3>
+            <div class="sec-body">
+               <label>Section Heading (last word uses theme colour)</label>
+               <input type="text" id="edit-skills-title" class="edit-input" maxlength="40" placeholder="My Skills">
+               <div class="title-preview" id="preview-skills-title"></div>
+               <div id="edit-skills-container"></div>
+               <button type="button" class="add-btn" id="add-skill-cat-btn">+ Add Skill Category Card</button>
+            </div>
+            <button type="button" class="add-btn sec-restore-btn" style="display: none;">+ Add Skills Section Back</button>
+         </div>
 
          <!--==================== CUSTOM SECTIONS ====================-->
          <h3>Custom Sections (Optional - Max 3)</h3>
@@ -113,6 +145,9 @@ input, button, textarea, select { border: none; outline: none; background: none;
 
          <!--==================== CONNECT WITH ME SECTION ====================-->
          <h3>Connect With Me</h3>
+         <label>Section Heading (last word uses theme colour)</label>
+         <input type="text" id="edit-connect-title" class="edit-input" maxlength="40" placeholder="Connect With Me">
+         <div class="title-preview" id="preview-connect-title"></div>
          <label>Mobile Number (Compulsory - People can Save or Copy it)</label>
          <input type="text" id="edit-phone" class="edit-input" placeholder="+91 00000 00000" inputmode="tel" required>
          <small style="display: block; color: var(--text-color); font-size: var(--small-font-size); margin-bottom: 1rem;">Enter 10 digits, or add your country code (e.g. +91 98765 43210).</small>
@@ -280,6 +315,10 @@ input, button, textarea, select { border: none; outline: none; background: none;
            heroRoles: ["Role 1", "Role 2", "Role 3"],
            heroTag: "Add your tagline here.",
            aboutTitle: "About me section",
+           workTitle: "My Projects",
+           serviceTitle: "My Services",
+           skillsTitle: "My Skills",
+           connectTitle: "Connect With Me",
            projects: [
              {
                projectTitle: "Restaurant Website",
@@ -336,6 +375,79 @@ input, button, textarea, select { border: none; outline: none; background: none;
              setThemeHue(btn.getAttribute('data-hue'));
            });
          });
+
+         /* ---------------- section headings + delete / restore built-in sections ---------------- */
+         const escHtml = (v) => String(v ?? '').replace(/[&<>"']/g, (c) =>
+           ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+         // Same rule as the public card (index.html): the last word is shown in the theme colour.
+         // The four built-in default headings keep their original look until the person renames them.
+         const DEFAULT_HEADINGS = {
+           work:    { text: 'My Projects',     html: 'My <span>Projects</span>' },
+           service: { text: 'My Services',     html: '<span>My</span> Services' },
+           skills:  { text: 'My Skills',       html: 'My <span>Skills</span>' },
+           contact: { text: 'Connect With Me', html: 'Connect <span>With Me</span>' }
+         };
+         function headingHtml(key, raw) {
+           const text = String(raw ?? '').trim().replace(/\s+/g, ' ');
+           const def = key ? DEFAULT_HEADINGS[key] : null;
+           if (def && (!text || text === def.text)) return def.html;
+           if (!text) return '';
+           const words = text.split(' ');
+           return words.length > 1
+             ? `${escHtml(words.slice(0, -1).join(' '))} <span>${escHtml(words[words.length - 1])}</span>`
+             : `<span>${escHtml(text)}</span>`;
+         }
+
+         const headingPreviewUpdaters = [];
+         function bindTitlePreview(input, preview, key) {
+           const update = () => { preview.innerHTML = headingHtml(key, input.value); };
+           input.addEventListener('input', update);
+           headingPreviewUpdaters.push(update);
+           update();
+         }
+         const refreshHeadingPreviews = () => headingPreviewUpdaters.forEach(fn => fn());
+
+         // key = id stored in "hiddenSections". Deleting a section hides it on the card; nothing is
+         // written to the database until "Save Live", and Cancel throws the change away.
+         const BUILTIN_SECTIONS = {
+           work:     { headingKey: 'work',    block: 'sec-work',     title: 'edit-work-title',    preview: 'preview-work-title',    container: 'edit-projects-container', addBlank: () => addAdminProject() },
+           services: { headingKey: 'service', block: 'sec-services', title: 'edit-service-title', preview: 'preview-service-title', container: 'edit-services-container', addBlank: () => addAdminService() },
+           skills:   { headingKey: 'skills',  block: 'sec-skills',   title: 'edit-skills-title',  preview: 'preview-skills-title',  container: 'edit-skills-container',   addBlank: () => addAdminSkillCategory() }
+         };
+
+         function setSectionDeleted(key, deleted) {
+           const block = $(BUILTIN_SECTIONS[key].block);
+           block.dataset.deleted = deleted ? '1' : '';
+           block.querySelector('.sec-body').style.display = deleted ? 'none' : '';
+           block.querySelector('.sec-restore-btn').style.display = deleted ? '' : 'none';
+           block.querySelector('h3 .remove-btn').style.display = deleted ? 'none' : '';
+         }
+
+         function deleteSection(key) {
+           const cfg = BUILTIN_SECTIONS[key], container = $(cfg.container);
+           cfg.stash = Array.from(container.children);   // kept in memory so "Add ... Back" can bring the cards back
+           container.replaceChildren();
+           setSectionDeleted(key, true);
+         }
+
+         function restoreSection(key) {
+           const cfg = BUILTIN_SECTIONS[key], container = $(cfg.container);
+           if (cfg.stash && cfg.stash.length) container.replaceChildren(...cfg.stash);
+           cfg.stash = null;
+           setSectionDeleted(key, false);
+           if (!container.children.length) cfg.addBlank();
+         }
+
+         Object.keys(BUILTIN_SECTIONS).forEach((key) => {
+           const cfg = BUILTIN_SECTIONS[key], block = $(cfg.block);
+           bindTitlePreview($(cfg.title), $(cfg.preview), cfg.headingKey);
+           const cross = block.querySelector('h3 .remove-btn');
+           cross.addEventListener('click', () => deleteSection(key));
+           cross.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); deleteSection(key); } });
+           block.querySelector('.sec-restore-btn').addEventListener('click', () => restoreSection(key));
+         });
+         bindTitlePreview($('edit-connect-title'), $('preview-connect-title'), 'contact');
 
          /* ---------------- dynamic builders ---------------- */
          window.removeRow = function(el) { el.parentElement.remove(); };
@@ -552,6 +664,7 @@ input, button, textarea, select { border: none; outline: none; background: none;
            div.innerHTML = `
               <i class="ri-close-line remove-btn" onclick="removeRow(this)"></i>
               <input type="text" class="edit-input custom-sec-title" placeholder="Section Title (e.g., Work Experience, Certifications)">
+              <div class="title-preview"></div>
               <input type="text" class="edit-input custom-sec-subtitle" placeholder="Section Subtitle (Optional)">
               <label style="margin-top: 0.6rem;">Section Layout Style</label>
               <select class="edit-input custom-sec-type">
@@ -570,6 +683,7 @@ input, button, textarea, select { border: none; outline: none; background: none;
            const cardsList = div.querySelector('.custom-sec-cards-list');
 
            titleInp.value = secData.sectionTitle || '';
+           bindTitlePreview(titleInp, div.querySelector('.title-preview'), null);
            subInp.value = secData.sectionSubtitle || '';
            typeSelect.value = ['skills', 'services', 'work', 'text'].includes(secData.layoutType) ? secData.layoutType : 'skills';
 
@@ -667,7 +781,8 @@ input, button, textarea, select { border: none; outline: none; background: none;
 
            $('edit-about-title').value = data.aboutTitle !== undefined ? data.aboutTitle : DEFAULTS.aboutTitle;
 
-           const projects = Array.isArray(data.projects) ? data.projects : DEFAULTS.projects;
+           const hiddenSections = new Set(Array.isArray(data.hiddenSections) ? data.hiddenSections : []);
+           const projects = hiddenSections.has('work') ? [] : (Array.isArray(data.projects) ? data.projects : DEFAULTS.projects);
            projects.slice(0, 10).forEach(p => addAdminProject(
              p.projectTitle !== undefined ? p.projectTitle : p.title,
              p.projectDescription !== undefined ? p.projectDescription : p.description,
@@ -675,11 +790,19 @@ input, button, textarea, select { border: none; outline: none; background: none;
              p.projectLink !== undefined ? p.projectLink : p.link
            ));
 
-           const services = Array.isArray(data.services) ? data.services : DEFAULTS.services;
+           const services = hiddenSections.has('services') ? [] : (Array.isArray(data.services) ? data.services : DEFAULTS.services);
            services.slice(0, 6).forEach(s => addAdminService(s.serviceName, s.serviceDescription, s.servicePerks));
 
-           const skillCategories = Array.isArray(data.skillCategories) ? data.skillCategories : DEFAULTS.skillCategories;
+           const skillCategories = hiddenSections.has('skills') ? [] : (Array.isArray(data.skillCategories) ? data.skillCategories : DEFAULTS.skillCategories);
            skillCategories.slice(0, 5).forEach(c => addAdminSkillCategory(c.categoryTitle, c.skills));
+
+           // Section headings and deleted state of the built-in sections
+           $('edit-work-title').value = data.workTitle !== undefined ? data.workTitle : DEFAULTS.workTitle;
+           $('edit-service-title').value = data.serviceTitle !== undefined ? data.serviceTitle : DEFAULTS.serviceTitle;
+           $('edit-skills-title').value = data.skillsTitle !== undefined ? data.skillsTitle : DEFAULTS.skillsTitle;
+           $('edit-connect-title').value = data.connectTitle !== undefined ? data.connectTitle : DEFAULTS.connectTitle;
+           Object.keys(BUILTIN_SECTIONS).forEach(k => setSectionDeleted(k, hiddenSections.has(k)));
+           refreshHeadingPreviews();
 
            if (Array.isArray(data.customSections)) {
              data.customSections.slice(0, 3).forEach(sec => addAdminCustomSection(sec));
@@ -760,6 +883,13 @@ input, button, textarea, select { border: none; outline: none; background: none;
            const rawAvatar = $('edit-avatar-url').value.trim();
            const profileImageUrl = safeImageSrc(rawAvatar);
            const aboutTitle = $('edit-about-title').value.trim();
+
+           // Section headings (empty = back to the default) and which built-in sections were deleted.
+           const workTitle = $('edit-work-title').value.trim().replace(/\s+/g, ' ') || DEFAULTS.workTitle;
+           const serviceTitle = $('edit-service-title').value.trim().replace(/\s+/g, ' ') || DEFAULTS.serviceTitle;
+           const skillsTitle = $('edit-skills-title').value.trim().replace(/\s+/g, ' ') || DEFAULTS.skillsTitle;
+           const connectTitle = $('edit-connect-title').value.trim().replace(/\s+/g, ' ') || DEFAULTS.connectTitle;
+           const hiddenSections = Object.keys(BUILTIN_SECTIONS).filter(k => $(BUILTIN_SECTIONS[k].block).dataset.deleted === '1');
 
            // Every field that is not valid is collected here, marked red, and reported before anything is saved.
            const problems = [];
@@ -912,6 +1042,11 @@ input, button, textarea, select { border: none; outline: none; background: none;
              profileImageUrl,
              avatar: profileImageUrl,
              aboutTitle,
+             workTitle,
+             serviceTitle,
+             skillsTitle,
+             connectTitle,
+             hiddenSections,
              projects: projects.slice(0, 10),
              services: services.slice(0, 6),
              skillCategories: skillCategories.slice(0, 5),
