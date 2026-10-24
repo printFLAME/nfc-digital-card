@@ -328,6 +328,11 @@ img { display: block; max-width: 100%; height: auto; }
   .contact__container { padding-top: 2rem; }
 }
 
+/*==================== DYNAMIC MENU (custom sections / renamed sections) ====================*/
+.nav__list--many { row-gap: 1.75rem; }
+@media (width <= 1150px) { .nav__menu { overflow-y: auto; } }
+@media (width >= 1150px) { .nav__list.nav__list--many { column-gap: 1.75rem; } }
+
 /*==================== ADMIN & SETUP STYLES ====================*/
 #loader { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--body-color); display: flex; justify-content: center; align-items: center; z-index: 9999; }
 .spinner { width: 50px; height: 50px; border: 3px solid rgba(255,255,255,0.1); border-radius: 50%; border-top-color: var(--first-color); animation: spin 1s ease-in-out infinite; }
@@ -683,8 +688,8 @@ if (document.getElementById('home-typed')) {
 }
 
 /*=============== SCROLL SECTIONS ACTIVE LINK ===============*/
-const sections = document.querySelectorAll('section[id]')
-const scrollActive = () =>{ const scrollDown = window.scrollY; sections.forEach(current =>{ const sectionHeight = current.offsetHeight, sectionTop = current.offsetTop - 58, sectionId = current.getAttribute('id'), sectionsClass = document.querySelector('.nav__menu a[href*=' + sectionId + ']'); if (sectionsClass) { if(scrollDown > sectionTop && scrollDown <= sectionTop + sectionHeight){ sectionsClass.classList.add('active-link') }else{ sectionsClass.classList.remove('active-link') } } }) }
+// (sections are looked up on every scroll because custom sections are added after the page loads)
+const scrollActive = () =>{ const scrollDown = window.scrollY; document.querySelectorAll('section[id]').forEach(current =>{ const sectionHeight = current.offsetHeight, sectionTop = current.offsetTop - 58, sectionId = current.getAttribute('id'), sectionsClass = document.querySelector('.nav__menu a[href*=' + sectionId + ']'); if (sectionsClass) { if(scrollDown > sectionTop && scrollDown <= sectionTop + sectionHeight){ sectionsClass.classList.add('active-link') }else{ sectionsClass.classList.remove('active-link') } } }) }
 window.addEventListener('scroll', scrollActive)
 
 /*=============== SHOW SCROLL UP ===============*/ 
@@ -909,7 +914,7 @@ window.addEventListener('scroll', scrollUp)
 
            // 6. CUSTOM SECTIONS (Max 3 Sections, 4 Layout Options)
            if (publicCustomSections && Array.isArray(card.customSections)) {
-             publicCustomSections.innerHTML = card.customSections.slice(0, 3).map((sec) => {
+             publicCustomSections.innerHTML = card.customSections.slice(0, 3).map((sec, secIdx) => {
                const rawTitle = String(sec.sectionTitle || '').trim();
                if (!rawTitle) return '';
                const words = rawTitle.split(/\s+/);
@@ -933,7 +938,7 @@ window.addEventListener('scroll', scrollUp)
                      </div>`;
                  }).join('');
                  return `
-                   <section class="skills section">
+                   <section class="skills section" id="custom-${secIdx + 1}">
                       <h2 class="section__title">${titleHtml}</h2>
                       ${subtitleHtml}
                       <div class="skills__container container grid">${cardsHtml}</div>
@@ -952,7 +957,7 @@ window.addEventListener('scroll', scrollUp)
                      </article>`;
                  }).join('');
                  return `
-                   <section class="services section">
+                   <section class="services section" id="custom-${secIdx + 1}">
                       <h2 class="section__title">${titleHtml}</h2>
                       ${subtitleHtml}
                       <div class="services__container container grid">${cardsHtml}</div>
@@ -975,7 +980,7 @@ window.addEventListener('scroll', scrollUp)
                      </article>`;
                  }).join('');
                  return `
-                   <section class="work section">
+                   <section class="work section" id="custom-${secIdx + 1}">
                       <h2 class="section__title">${titleHtml}</h2>
                       ${subtitleHtml}
                       <div class="work__container container">${cardsHtml}</div>
@@ -992,7 +997,7 @@ window.addEventListener('scroll', scrollUp)
                    </div>`;
                }).join('');
                return `
-                 <section class="about section">
+                 <section class="about section" id="custom-${secIdx + 1}">
                     <h2 class="section__title">${titleHtml}</h2>
                     ${subtitleHtml}
                     ${blocksHtml}
@@ -1035,6 +1040,53 @@ window.addEventListener('scroll', scrollUp)
              : `<span>${esc(text)}</span>`;
          }
 
+         // The menu and footer links follow the cards: renamed sections show their new name, custom sections get
+         // their own link, deleted sections lose theirs. A section that was never renamed keeps its usual menu label.
+         function syncNavigation(card) {
+           const navList = document.querySelector('.nav__list');
+           const footerList = document.querySelector('.footer__links');
+           if (!navList) return;
+           const short = (t) => (t.length > 18 ? t.slice(0, 17).trimEnd() + '…' : t);
+           const hoverCursor = (a) => {
+             const c = document.getElementById('cursor');
+             if (!c) return;
+             a.addEventListener('mouseenter', () => c.classList.add('cursor-active'));
+             a.addEventListener('mouseleave', () => c.classList.remove('cursor-active'));
+           };
+
+           // 1) built-in sections: label = the new heading, once it has been renamed
+           [['#work', 'work', 'workTitle'], ['#service', 'service', 'serviceTitle'],
+            ['#skills', 'skills', 'skillsTitle'], ['#contact', 'contact', 'connectTitle']].forEach(([hash, key, field]) => {
+             const text = String(card[field] ?? '').trim().replace(/\s+/g, ' ');
+             if (!text || text === DEFAULT_HEADINGS[key].text) return;
+             document.querySelectorAll(`a[href="${hash}"].nav__link, a[href="${hash}"].nav__contact, a[href="${hash}"].footer__link`)
+               .forEach((a) => { a.textContent = short(text); a.title = text; });
+           });
+
+           // 2) custom sections: one menu link + one footer link each, placed before the "Connect" button
+           const connectItem = navList.querySelector('.nav__contact')?.closest('li') || null;
+           document.querySelectorAll('#custom-sections-wrapper > section[id^="custom-"]').forEach((sec) => {
+             const title = (sec.querySelector('.section__title')?.textContent || '').replace(/\s+/g, ' ').trim();
+             if (!title) return;
+             const makeLink = (cls) => {
+               const li = document.createElement('li');
+               const a = document.createElement('a');
+               a.href = `#${sec.id}`; a.className = cls; a.textContent = short(title); a.title = title;
+               li.appendChild(a);
+               hoverCursor(a);
+               return { li, a };
+             };
+             const menuLink = makeLink('nav__link');
+             menuLink.a.addEventListener('click', () => $('nav-menu').classList.remove('show-menu')); // close the mobile menu
+             navList.insertBefore(menuLink.li, connectItem);
+             if (footerList) footerList.appendChild(makeLink('footer__link').li);
+           });
+
+           // 3) a crowded menu gets tighter spacing
+           const visible = Array.from(navList.children).filter((li) => li.style.display !== 'none').length;
+           navList.classList.toggle('nav__list--many', visible > 5);
+         }
+
          function applySectionSettings(card) {
            if (!card) return; // unclaimed card keeps the default page
            [['work', 'work-title', 'workTitle'], ['service', 'service-title', 'serviceTitle'],
@@ -1054,6 +1106,8 @@ window.addEventListener('scroll', scrollUp)
                if (item) item.style.display = 'none';
              });
            });
+
+           syncNavigation(card);
          }
 
          /* ---------------- who sees what ----------------
