@@ -250,11 +250,43 @@ img { display: block; max-width: 100%; height: auto; }
 .contact__links .button { width: 100%; font-size: var(--h3-font-size); }
 .contact__links .button i { font-size: 1.5rem; }
 
-/* Phone number row: [Save to contacts] [Copy] */
-.contact__phone { display: flex; gap: .75rem; width: 100%; }
-.contact__links .contact__phone .button { width: auto; padding: 1rem 1.25rem; white-space: nowrap; }
-.contact__phone .contact__save { flex: 1 1 auto; min-width: 0; }
-.contact__phone .contact__copy { flex: 0 0 auto; background-color: transparent; color: var(--first-color); }
+/* Ph/* Phone number row: [Save to contacts] aligned with Instagram, [Copy] outside on the right */
+.contact__phone {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+/* Make the phone number button full width so it matches the Instagram button */
+.contact__links .contact__phone .contact__save {
+  width: 100%;
+  flex: 1 1 100%;
+  padding: 1rem 2rem;
+  white-space: nowrap;
+}
+
+/* Float the Copy button outside the right edge of the container */
+.contact__links .contact__phone .contact__copy {
+  position: absolute;
+  left: calc(100% + 1rem);
+  top: 50%;
+  transform: translateY(-50%);
+  width: auto;
+  padding: 0.5rem 0.5rem;
+  background-color: transparent;
+  color: var(--first-color);
+  white-space: nowrap;
+  box-shadow: none;
+}
+
+/* On narrow mobile screens, leave space on the right so "Copy" doesn't get cut off */
+@media (max-width: 576px) {
+  .contact__links {
+    max-width: calc(100% - 95px);
+    margin-right: auto;
+  }
+}
 /*=============== FOOTER ===============*/
 .footer { background-color: var(--container-color); padding-block: 4rem 2rem; margin-top: 5rem; text-align: center; }
 .footer__title { font-size: var(--h2-font-size); margin-bottom: 2rem; }
