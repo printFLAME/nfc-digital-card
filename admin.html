@@ -8,7 +8,7 @@
       <style>
 /*=============== YOUR EXACT CSS (100% UNTOUCHED) ===============*/
 @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Syne:wght@400..800&display=swap");
-:root { --header-height: 3.5rem; --hue: 110; --first-color: hsl(var(--hue), 100%, 40%); --white-color: hsl(var(--hue), 24%, 98%); --black-color: hsl(var(--hue), 12%, 8%); --text-color: hsl(var(--hue), 4%, 70%); --body-color: hsl(var(--hue), 12%, 4%); --container-color: hsl(var(--hue), 8%, 10%); --body-font: "Poppins", sans-serif; --small-font-size: .813rem; }
+:root { --header-height: 3.5rem; --hue: 110; --first-color: hsl(var(--hue), 90%, 80%); --white-color: hsl(var(--hue), 24%, 98%); --black-color: hsl(var(--hue), 12%, 8%); --text-color: hsl(var(--hue), 4%, 70%); --body-color: hsl(var(--hue), 12%, 4%); --container-color: hsl(var(--hue), 8%, 10%); --body-font: "Poppins", sans-serif; --small-font-size: .813rem; }
 * { box-sizing: border-box; padding: 0; margin: 0; }
 body { background-color: var(--body-color); color: var(--text-color); font-family: var(--body-font); display: flex; justify-content: center; align-items: flex-start; padding: 2rem 1rem; }
 input, button, textarea, select { border: none; outline: none; background: none; }
@@ -40,7 +40,7 @@ input, button, textarea, select { border: none; outline: none; background: none;
 .theme-swatches { display: flex; gap: 0.85rem; flex-wrap: wrap; margin-top: 0.5rem; margin-bottom: 0.5rem; }
 .theme-circle { width: 38px; height: 38px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s; }
 .theme-circle:hover { transform: scale(1.12); }
-.theme-circle.active { border-color: #ffffff; transform: scale(1.15); box-shadow: 0 0 22px var(--first-color); }
+.theme-circle.active { border-color: #ffffff; transform: scale(1.15); box-shadow: 0 0 12px rgba(255,255,255,0.6); }
 
 #loader { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--body-color); display: flex; justify-content: center; align-items: center; z-index: 9999; }
 .spinner { width: 50px; height: 50px; border: 3px solid rgba(255,255,255,0.1); border-radius: 50%; border-top-color: var(--first-color); animation: spin 1s ease-in-out infinite; }
@@ -58,13 +58,13 @@ input, button, textarea, select { border: none; outline: none; background: none;
          <label>Choose Card Color</label>
          <div class="theme-swatches" id="theme-swatches">
             <button type="button" class="theme-circle active" data-hue="110" title="Green" style="background: hsl(110, 75%, 60%);"></button>
-            <button type="button" class="theme-circle" data-hue="325" title="Pink" style="background: hsl(325, 100%, 60%);"></button>
-            <button type="button" class="theme-circle" data-hue="215" title="Blue" style="background: hsl(215, 100%, 60%);"></button>
-            <button type="button" class="theme-circle" data-hue="50" title="Yellow" style="background: hsl(50, 100%, 60%);"></button>
-            <button type="button" class="theme-circle" data-hue="270" title="Purple" style="background: hsl(270, 100%, 60%);"></button>
-            <button type="button" class="theme-circle" data-hue="0" title="Red" style="background: hsl(0, 100%, 40%);"></button>
-            <button type="button" class="theme-circle" data-hue="180" title="Cyan" style="background: hsl(180, 100%, 60%);"></button>
-            <button type="button" class="theme-circle" data-hue="25" title="Orange" style="background: hsl(25, 100%, 58%);"></button>
+            <button type="button" class="theme-circle" data-hue="325" title="Pink" style="background: hsl(325, 75%, 60%);"></button>
+            <button type="button" class="theme-circle" data-hue="215" title="Blue" style="background: hsl(215, 75%, 60%);"></button>
+            <button type="button" class="theme-circle" data-hue="50" title="Yellow" style="background: hsl(50, 75%, 60%);"></button>
+            <button type="button" class="theme-circle" data-hue="270" title="Purple" style="background: hsl(270, 75%, 60%);"></button>
+            <button type="button" class="theme-circle" data-hue="0" title="Red" style="background: hsl(0, 75%, 60%);"></button>
+            <button type="button" class="theme-circle" data-hue="180" title="Cyan" style="background: hsl(180, 75%, 60%);"></button>
+            <button type="button" class="theme-circle" data-hue="25" title="Orange" style="background: hsl(25, 75%, 60%);"></button>
          </div>
          <input type="hidden" id="edit-theme-hue" value="110">
          
@@ -113,8 +113,11 @@ input, button, textarea, select { border: none; outline: none; background: none;
 
          <!--==================== CONNECT WITH ME SECTION ====================-->
          <h3>Connect With Me</h3>
-         <label>Mobile Number (Compulsory - Copies on Click)</label>
-         <input type="text" id="edit-phone" class="edit-input" placeholder="+91 00000 00000" required>
+         <label>Mobile Number (Compulsory - People can Save or Copy it)</label>
+         <input type="text" id="edit-phone" class="edit-input" placeholder="+91 00000 00000" inputmode="tel" required>
+         <small style="display: block; color: var(--text-color); font-size: var(--small-font-size); margin-bottom: 1rem;">Enter 10 digits, or add your country code (e.g. +91 98765 43210).</small>
+         <div id="edit-phone2-container"></div>
+         <button type="button" class="add-btn" id="add-phone2-btn">+ Add Another Number (Optional)</button>
 
          <label>Redirect Buttons (Instagram, LinkedIn, etc.)</label>
          <div id="edit-links-container"></div>
@@ -155,16 +158,48 @@ input, button, textarea, select { border: none; outline: none; background: none;
          const withTimeout = (promise, ms = 15000) =>
            Promise.race([promise, new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))]);
 
-         // Only http(s)/mailto/tel links are accepted (blocks javascript: URLs). Bare domains get https://
-         function normalizeUrl(raw, protocols = ['http:', 'https:', 'mailto:', 'tel:']) {
+         // A valid phone number is either 10 digits (98765 43210) or "+" + country code + number (+91 98765 43210).
+         // Spaces, dashes, dots and brackets are allowed. Returns the tidy number, or '' when it is not valid.
+         // (Only the format is checked, not whether the number really exists.)
+         function normalizePhone(raw) {
            const value = String(raw ?? '').trim();
            if (!value) return '';
-           const candidate = /^(https?:\/\/|mailto:|tel:)/i.test(value) ? value : 'https://' + value;
+           if (!/^\+?[\d\s().-]+$/.test(value)) return '';
+           const digits = value.replace(/\D/g, '');
+           if (value.startsWith('+')) {
+             if (digits.startsWith('91')) {
+               return digits.length === 12 ? `+91 ${digits.slice(2, 7)} ${digits.slice(7)}` : '';
+             }
+             return /^[1-9]\d{10,14}$/.test(digits) ? '+' + digits : '';
+           }
+           return digits.length === 10 ? `${digits.slice(0, 5)} ${digits.slice(5)}` : '';
+         }
+
+         // Only REAL links are accepted: a proper domain (name.com), no spaces, no user:password@ tricks,
+         // and only http(s) / mailto / tel (blocks javascript: URLs). A bare domain gets https://, a bare email gets mailto:
+         const EMAIL_RE = /^[^\s@:/]+@[^\s@:/]+\.[a-z]{2,}$/i;
+         function normalizeUrl(raw, protocols = ['http:', 'https:', 'mailto:', 'tel:']) {
+           const value = String(raw ?? '').trim();
+           if (!value || /\s/.test(value)) return '';
+           const hasScheme = /^(https?:\/\/|mailto:|tel:)/i.test(value);
+           if (!hasScheme && EMAIL_RE.test(value)) return protocols.includes('mailto:') ? 'mailto:' + value : '';
            try {
-             const url = new URL(candidate);
-             return protocols.includes(url.protocol) ? url.href : '';
+             const url = new URL(hasScheme ? value : 'https://' + value);
+             if (!protocols.includes(url.protocol)) return '';
+             if (url.protocol === 'http:' || url.protocol === 'https:') {
+               if (url.username || url.password) return '';
+               if (!/^([a-z0-9-]+\.)+([a-z]{2,}|xn--[a-z0-9-]+)$/i.test(url.hostname)) return '';
+             } else if (url.protocol === 'mailto:') {
+               if (!EMAIL_RE.test(decodeURIComponent(url.pathname))) return '';
+             } else if (url.protocol === 'tel:') {
+               if (!normalizePhone(decodeURIComponent(url.pathname))) return '';
+             }
+             return url.href;
            } catch (_) { return ''; }
          }
+
+         // A red border marks a rejected field; it clears as soon as the person edits it.
+         document.addEventListener('input', (e) => { if (e.target && e.target.style) e.target.style.borderColor = ''; });
 
          function safeImageSrc(src) {
            const value = String(src ?? '').trim();
@@ -573,6 +608,25 @@ input, button, textarea, select { border: none; outline: none; background: none;
          }
          $('add-link-btn').addEventListener('click', () => addAdminLink());
 
+         // Optional 2nd mobile number: one extra row that can be removed again.
+         function addAdminPhone2(value = '') {
+           if ($('edit-phone2-container').children.length) return;
+           const div = document.createElement('div');
+           div.className = 'dynamic-row';
+           div.innerHTML = `
+              <i class="ri-close-line remove-btn"></i>
+              <input type="text" inputmode="tel" class="edit-input phone2-input" placeholder="Second mobile number (optional)">
+           `;
+           div.querySelector('.phone2-input').value = value || '';
+           div.querySelector('.remove-btn').addEventListener('click', () => {
+             div.remove();
+             $('add-phone2-btn').style.display = '';
+           });
+           $('edit-phone2-container').appendChild(div);
+           $('add-phone2-btn').style.display = 'none';
+         }
+         $('add-phone2-btn').addEventListener('click', () => addAdminPhone2());
+
          /* ---------------- profile photo upload & URL preview ---------------- */
          $('edit-avatar-file').addEventListener('change', function(e) {
            const file = e.target.files[0];
@@ -632,6 +686,7 @@ input, button, textarea, select { border: none; outline: none; background: none;
            }
 
            $('edit-phone').value = data.phoneNumber !== undefined ? data.phoneNumber : DEFAULTS.phoneNumber;
+           if (data.phoneNumber2) addAdminPhone2(data.phoneNumber2);
 
            const links = Array.isArray(data.links) ? data.links : DEFAULTS.links;
            links.forEach(l => addAdminLink(l.label, l.url));
@@ -684,8 +739,8 @@ input, button, textarea, select { border: none; outline: none; background: none;
 
            if (!auth.currentUser) { goToProfile(); return; }
 
-           const phoneNumber = $('edit-phone').value.trim();
-           if (!phoneNumber) {
+           const rawPhone = $('edit-phone').value.trim();
+           if (!rawPhone) {
              alert("Mobile number is compulsory. Please enter a mobile number.");
              $('edit-phone').focus();
              return;
@@ -706,20 +761,22 @@ input, button, textarea, select { border: none; outline: none; background: none;
            const profileImageUrl = safeImageSrc(rawAvatar);
            const aboutTitle = $('edit-about-title').value.trim();
 
-           const badLinks = [];
-           if (rawAvatar && !profileImageUrl) badLinks.push(rawAvatar);
+           // Every field that is not valid is collected here, marked red, and reported before anything is saved.
+           const problems = [];
+           const flag = (el, label, kind) => problems.push({ el, label, kind });
+           if (rawAvatar && !profileImageUrl) flag($('edit-avatar-url'), 'Profile picture link', 'link');
 
            const projects = [];
-           document.querySelectorAll('#edit-projects-container .dynamic-row').forEach(row => {
+           document.querySelectorAll('#edit-projects-container .dynamic-row').forEach((row, i) => {
              const projectTitle = row.querySelector('.proj-title').value.trim();
              const projectDescription = row.querySelector('.proj-desc').value.trim();
              const rawImg = row.querySelector('.proj-img').value.trim();
              const rawLink = row.querySelector('.proj-link').value.trim();
              if (!projectTitle) return;
              const projectImageUrl = safeImageSrc(rawImg);
-             if (rawImg && !projectImageUrl) badLinks.push(rawImg);
+             if (rawImg && !projectImageUrl) flag(row.querySelector('.proj-img'), `Project ${i + 1} thumbnail link`, 'link');
              const projectLink = normalizeUrl(rawLink, ['http:', 'https:']);
-             if (rawLink && !projectLink) badLinks.push(rawLink);
+             if (rawLink && !projectLink) flag(row.querySelector('.proj-link'), `Project ${i + 1} destination link`, 'link');
              projects.push({
                projectTitle,
                projectDescription,
@@ -775,9 +832,9 @@ input, button, textarea, select { border: none; outline: none; background: none;
                let link = '';
                if (layoutType === 'work') {
                  imageUrl = safeImageSrc(rawImg);
-                 if (rawImg && !imageUrl) badLinks.push(rawImg);
+                 if (rawImg && !imageUrl) flag(cardEl.querySelector('.custom-card-img'), `"${sectionTitle}" > "${title}" image link`, 'link');
                  link = normalizeUrl(rawLink, ['http:', 'https:']);
-                 if (rawLink && !link) badLinks.push(rawLink);
+                 if (rawLink && !link) flag(cardEl.querySelector('.custom-card-link'), `"${sectionTitle}" > "${title}" link`, 'link');
                }
 
                const items = [];
@@ -805,18 +862,43 @@ input, button, textarea, select { border: none; outline: none; background: none;
              });
            });
 
+           // Mobile numbers: 10 digits, or +country code (e.g. +91 98765 43210). Only the format is checked.
+           const phoneNumber = normalizePhone(rawPhone);
+           if (!phoneNumber) flag($('edit-phone'), 'Mobile number', 'phone');
+
+           let phoneNumber2 = '';
+           const phone2El = document.querySelector('#edit-phone2-container .phone2-input');
+           if (phone2El && phone2El.value.trim()) {
+             phoneNumber2 = normalizePhone(phone2El.value);
+             if (!phoneNumber2) flag(phone2El, 'Second mobile number', 'phone');
+             else if (phoneNumber2 === phoneNumber) phoneNumber2 = '';   // same number twice: keep one
+           }
+
            const links = [];
-           document.querySelectorAll('#edit-links-container .dynamic-row').forEach(row => {
-             const label = row.querySelector('.link-label').value.trim();
-             const rawUrl = row.querySelector('.link-url').value.trim();
-             if (!(label && rawUrl)) return;
+           document.querySelectorAll('#edit-links-container .dynamic-row').forEach((row, i) => {
+             const labelEl = row.querySelector('.link-label'), urlEl = row.querySelector('.link-url');
+             const label = labelEl.value.trim();
+             const rawUrl = urlEl.value.trim();
+             if (!label && !rawUrl) return;                                  // empty row: ignored
+             if (!label) { flag(labelEl, `Redirect button ${i + 1} name`, 'missing'); return; }
+             if (!rawUrl) { flag(urlEl, `"${label}" button link`, 'missing'); return; }
              const url = normalizeUrl(rawUrl);
-             if (!url) { badLinks.push(rawUrl); return; }
+             if (!url) { flag(urlEl, `"${label}" button link`, 'link'); return; }
              links.push({ label, url });
            });
 
-           if (badLinks.length) {
-             alert(`This link can't be used: "${badLinks[0]}"\nPlease use a normal web address (https://...), mailto: or tel: link.`);
+           if (problems.length) {
+             problems.forEach(p => { p.el.style.borderColor = '#ff4d4d'; });
+             const first = problems[0];
+             const typed = String(first.el.value || '').slice(0, 60);
+             let msg;
+             if (first.kind === 'phone') msg = `Please enter a valid number for: ${first.label}\n\nUse 10 digits (98765 43210) or add the country code (+91 98765 43210).\nYou entered: "${typed}"`;
+             else if (first.kind === 'missing') msg = `${first.label} is incomplete.\n\nFill in both the name and a valid link, or remove that row.`;
+             else msg = `Please enter a valid link for: ${first.label}\n\nExample: https://example.com/yourpage\nYou entered: "${typed}"`;
+             if (problems.length > 1) msg += `\n\n${problems.length - 1} more field(s) are marked in red.`;
+             alert(msg);
+             first.el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+             first.el.focus({ preventScroll: true });
              return;
            }
 
@@ -835,6 +917,7 @@ input, button, textarea, select { border: none; outline: none; background: none;
              skillCategories: skillCategories.slice(0, 5),
              customSections: customSections.slice(0, 3),
              phoneNumber,
+             phoneNumber2,
              links
            };
 
