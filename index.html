@@ -250,43 +250,21 @@ img { display: block; max-width: 100%; height: auto; }
 .contact__links .button { width: 100%; font-size: var(--h3-font-size); }
 .contact__links .button i { font-size: 1.5rem; }
 
-/* Ph/* Phone number row: [Save to contacts] aligned with Instagram, [Copy] outside on the right */
-.contact__phone {
-  position: relative;
-  display: flex;
-  align-items: center;
-  width: 100%;
-}
+/* Phone number: ONE button. Tap it and "Save to contacts" / "Copy number" drop down right below it. */
+.contact__phone { width: 100%; }
+.contact__links .contact__phone .contact__num { position: relative; width: 100%; }
+.contact__num .contact__caret { position: absolute; right: 1.25rem; transition: transform .3s; }
+.contact__phone.open .contact__caret { transform: rotate(180deg); }
 
-/* Make the phone number button full width so it matches the Instagram button */
-.contact__links .contact__phone .contact__save {
-  width: 100%;
-  flex: 1 1 100%;
-  padding: 1rem 2rem;
-  white-space: nowrap;
-}
+.contact__menu { display: grid; grid-template-rows: 0fr; visibility: hidden; transition: grid-template-rows .3s ease, margin-top .3s ease, visibility 0s .3s; }
+.contact__phone.open .contact__menu { grid-template-rows: 1fr; margin-top: .6rem; visibility: visible; transition: grid-template-rows .3s ease, margin-top .3s ease, visibility 0s; }
+.contact__menu-inner { min-height: 0; overflow: hidden; }
+.contact__options { display: flex; flex-direction: column; background-color: var(--container-color); border: 1px solid var(--first-color); border-radius: 1rem; overflow: hidden; }
+.contact__opt { display: flex; align-items: center; column-gap: .75rem; width: 100%; padding: 1rem 1.5rem; color: var(--white-color); font-size: var(--normal-font-size); font-weight: var(--font-medium); text-align: left; cursor: pointer; transition: background-color .3s; }
+.contact__opt + .contact__opt { border-top: 1px solid hsla(var(--hue), 10%, 40%, .35); }
+.contact__opt i { color: var(--first-color); font-size: 1.25rem; }
+.contact__opt:hover, .contact__opt:focus-visible { background-color: hsla(var(--hue), 75%, 60%, .12); }
 
-/* Float the Copy button outside the right edge of the container */
-.contact__links .contact__phone .contact__copy {
-  position: absolute;
-  left: calc(100% + 1rem);
-  top: 50%;
-  transform: translateY(-50%);
-  width: auto;
-  padding: 0.5rem 0.5rem;
-  background-color: transparent;
-  color: var(--first-color);
-  white-space: nowrap;
-  box-shadow: none;
-}
-
-/* On narrow mobile screens, leave space on the right so "Copy" doesn't get cut off */
-@media (max-width: 576px) {
-  .contact__links {
-    max-width: calc(100% - 95px);
-    margin-right: auto;
-  }
-}
 /*=============== FOOTER ===============*/
 .footer { background-color: var(--container-color); padding-block: 4rem 2rem; margin-top: 5rem; text-align: center; }
 .footer__title { font-size: var(--h2-font-size); margin-bottom: 2rem; }
@@ -549,10 +527,17 @@ img { display: block; max-width: 100%; height: auto; }
             
             <div class="contact__container container">
                <div class="contact__links" id="contact-links-wrapper">
-                  <!-- Default Mobile Number: tap the number to SAVE it to your phone, or tap Copy -->
+                  <!-- Default Mobile Number: tap it, then choose "Save to contacts" or "Copy number" -->
                   <div class="contact__phone">
-                     <button type="button" class="button contact__save" data-phone="+91 00000 00000" onclick="window.savePhoneContact(this)" aria-label="Save +91 00000 00000 to contacts"><i class="ri-user-add-line"></i> +91 00000 00000</button>
-                     <button type="button" class="button contact__copy" data-phone="+91 00000 00000" onclick="window.copyPhoneNumber(this, this.getAttribute('data-phone'))" aria-label="Copy +91 00000 00000"><i class="ri-file-copy-line"></i> Copy</button>
+                     <button type="button" class="button contact__num" aria-haspopup="true" aria-expanded="false" aria-controls="phone-menu-default" onclick="window.togglePhoneMenu(this)"><i class="ri-phone-fill"></i> +91 00000 00000 <i class="ri-arrow-down-s-line contact__caret"></i></button>
+                     <div class="contact__menu" id="phone-menu-default">
+                        <div class="contact__menu-inner">
+                           <div class="contact__options" role="menu">
+                              <button type="button" class="contact__opt" role="menuitem" data-phone="+91 00000 00000" onclick="window.savePhoneContact(this)"><i class="ri-user-add-line"></i> <span>Save to contacts</span></button>
+                              <button type="button" class="contact__opt" role="menuitem" data-phone="+91 00000 00000" onclick="window.copyPhoneNumber(this, this.getAttribute('data-phone'))"><i class="ri-file-copy-line"></i> <span>Copy number</span></button>
+                           </div>
+                        </div>
+                     </div>
                   </div>
                   <a href="https://instagram.com" class="button" target="_blank" rel="noopener noreferrer">Instagram <i class="ri-arrow-right-up-line"></i></a>
                </div>
@@ -605,7 +590,7 @@ img { display: block; max-width: 100%; height: auto; }
 
       <!--=============== MAIN JS ===============-->
       <script>
-/*=============== PHONE NUMBER HELPERS: COPY + SAVE TO CONTACTS ===============*/
+/*=============== PHONE NUMBER: DROPDOWN + SAVE + COPY ===============*/
 // Shows a short message on a button, then puts its original content back.
 window.flashButton = function(btn, html) {
    if (!btn.hasAttribute('data-original')) btn.setAttribute('data-original', btn.innerHTML);
@@ -614,10 +599,39 @@ window.flashButton = function(btn, html) {
    btn._flashTimer = setTimeout(() => { btn.innerHTML = btn.getAttribute('data-original'); }, 1500);
 };
 
+// The number button opens / closes the small menu that drops down right below it.
+window.closePhoneMenu = function(wrap) {
+   if (!wrap) return;
+   wrap.classList.remove('open');
+   const b = wrap.querySelector('.contact__num');
+   if (b) b.setAttribute('aria-expanded', 'false');
+};
+window.closePhoneMenus = function() {
+   document.querySelectorAll('.contact__phone.open').forEach(window.closePhoneMenu);
+};
+window.togglePhoneMenu = function(btn) {
+   const wrap = btn.closest('.contact__phone');
+   if (!wrap) return;
+   const willOpen = !wrap.classList.contains('open');
+   window.closePhoneMenus();
+   if (willOpen) {
+      wrap.classList.add('open');
+      btn.setAttribute('aria-expanded', 'true');
+      // make sure the whole menu is on screen once it has finished dropping down
+      setTimeout(() => { const m = wrap.querySelector('.contact__menu'); if (m && m.scrollIntoView) m.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }, 320);
+   }
+};
+document.addEventListener('click', (e) => { if (!e.target.closest('.contact__phone')) window.closePhoneMenus(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') window.closePhoneMenus(); });
+
 window.copyPhoneNumber = function(btn, number) {
    const textToCopy = String(number || '').trim();
    if (!textToCopy) return;
-   const showCopied = () => window.flashButton(btn, '<i class="ri-check-line"></i> Copied!');
+   const wrap = btn.closest('.contact__phone');
+   const showCopied = () => {
+      window.flashButton(btn, '<i class="ri-check-line"></i> <span>Copied!</span>');
+      if (wrap) setTimeout(() => window.closePhoneMenu(wrap), 1700);
+   };
    const legacyCopy = () => {
       const temp = document.createElement('textarea');
       temp.value = textToCopy;
@@ -637,8 +651,11 @@ window.copyPhoneNumber = function(btn, number) {
    }
 };
 
-// Browsers cannot write to the phone book silently. The standard way is to hand the phone a contact card (.vcf):
-// iPhone shows "Add Contact", Android opens it in Contacts - one tap to save.
+// SAVE TO CONTACTS. A web page is not allowed to write into the phone book or open a blank
+// "new contact" form by itself, so the contact (name + number) is handed to the phone as a contact card:
+//  - iPhone / iPad : the card opens straight in Apple's "Add Contact" screen (nothing is downloaded)
+//  - Android       : the share sheet opens with the card, pick "Contacts" and tap Save (no file is stored)
+//  - other devices : the card is downloaded as a .vcf file
 window.savePhoneContact = function(btn) {
    const phone = String(btn.getAttribute('data-phone') || '').trim();
    const compact = phone.replace(/[^\d+]/g, '');
@@ -661,15 +678,51 @@ window.savePhoneContact = function(btn) {
       'END:VCARD'
    ].join('\r\n') + '\r\n';
 
-   const url = URL.createObjectURL(new Blob([vcard], { type: 'text/vcard;charset=utf-8' }));
-   const a = document.createElement('a');
-   a.href = url;
-   a.download = (name.replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '_') || 'contact') + '.vcf';
-   document.body.appendChild(a);
-   a.click();
-   document.body.removeChild(a);
-   setTimeout(() => URL.revokeObjectURL(url), 10000);
-   window.flashButton(btn, '<i class="ri-download-2-line"></i> Saving...');
+   const fileName = (name.replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '_') || 'contact') + '.vcf';
+   const blob = new Blob([vcard], { type: 'text/vcard;charset=utf-8' });
+   const wrap = btn.closest('.contact__phone');
+   const finish = (label) => {
+      window.flashButton(btn, '<i class="ri-check-line"></i> <span>' + label + '</span>');
+      if (wrap) setTimeout(() => window.closePhoneMenu(wrap), 1700);
+   };
+   const clickLink = (href, downloadName) => {
+      const a = document.createElement('a');
+      a.href = href;
+      if (downloadName) a.download = downloadName;
+      a.rel = 'noopener';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+   };
+   const download = () => {
+      const url = URL.createObjectURL(blob);
+      clickLink(url, fileName);
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+      finish('Contact file ready');
+   };
+
+   const ua = navigator.userAgent || '';
+   const isIOS = /iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+   const isAndroid = /Android/i.test(ua);
+
+   if (isIOS) {
+      // no "download" attribute: iOS then shows the contact card with its own Add Contact button
+      clickLink(URL.createObjectURL(blob));
+      finish('Opening...');
+      return;
+   }
+   if (isAndroid && typeof File === 'function' && navigator.canShare && navigator.share) {
+      try {
+         const file = new File([blob], fileName, { type: 'text/vcard' });
+         if (navigator.canShare({ files: [file] })) {
+            navigator.share({ files: [file], title: name })
+               .then(() => finish('Done'))
+               .catch((err) => { if (!err || err.name !== 'AbortError') download(); });
+            return;
+         }
+      } catch (e) { /* fall through to the download */ }
+   }
+   download();
 };
 
 /*=============== SHOW & CLOSE MENU ===============*/
@@ -743,13 +796,18 @@ window.addEventListener('scroll', scrollUp)
            ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
          // Only http(s)/mailto/tel links are ever rendered (blocks javascript: URLs). Bare domains get https://
+         const EMAIL_RE = /^[^\s@:/]+@[^\s@:/]+\.[a-z]{2,}$/i;
          function normalizeUrl(raw, protocols = ['http:', 'https:', 'mailto:', 'tel:']) {
            const value = String(raw ?? '').trim();
            if (!value) return '';
+           // a bare email address (name@gmail.com) becomes a mailto: link that opens the mail app
+           if (!/^(https?:\/\/|mailto:|tel:)/i.test(value) && EMAIL_RE.test(value)) return protocols.includes('mailto:') ? 'mailto:' + value : '';
            const candidate = /^(https?:\/\/|mailto:|tel:)/i.test(value) ? value : 'https://' + value;
            try {
              const url = new URL(candidate);
-             return protocols.includes(url.protocol) ? url.href : '';
+             if (!protocols.includes(url.protocol)) return '';
+             if ((url.protocol === 'http:' || url.protocol === 'https:') && (url.username || url.password)) return '';
+             return url.href;
            } catch (_) { return ''; }
          }
 
@@ -802,18 +860,21 @@ window.addEventListener('scroll', scrollUp)
          }
 
          /* ---------------- rendering ---------------- */
-         // One phone number = [Save to contacts] [Copy]. A number that is not a normal phone number (old data)
-         // keeps the old single full-width "tap to copy" button.
-         function phoneRowHtml(phone) {
+         // One phone number = ONE button. Tapping it drops down "Save to contacts" and "Copy number" right below it.
+         // A number that is not a normal phone number (old data) keeps the old single "tap to copy" button.
+         function phoneRowHtml(phone, idx) {
            const p = esc(phone);
            const compact = String(phone).replace(/[^\d+]/g, '');
            if (!/^\+?\d{7,15}$/.test(compact)) {
              return `<button type="button" class="button" data-phone="${p}" onclick="window.copyPhoneNumber(this, this.getAttribute('data-phone'))">${p}</button>`;
            }
+           const id = 'phone-menu-' + idx;
            return `<div class="contact__phone">` +
-             `<button type="button" class="button contact__save" data-phone="${p}" onclick="window.savePhoneContact(this)" aria-label="Save ${p} to contacts"><i class="ri-user-add-line"></i> ${p}</button>` +
-             `<button type="button" class="button contact__copy" data-phone="${p}" onclick="window.copyPhoneNumber(this, this.getAttribute('data-phone'))" aria-label="Copy ${p}"><i class="ri-file-copy-line"></i> Copy</button>` +
-             `</div>`;
+             `<button type="button" class="button contact__num" aria-haspopup="true" aria-expanded="false" aria-controls="${id}" onclick="window.togglePhoneMenu(this)"><i class="ri-phone-fill"></i> ${p} <i class="ri-arrow-down-s-line contact__caret"></i></button>` +
+             `<div class="contact__menu" id="${id}"><div class="contact__menu-inner"><div class="contact__options" role="menu">` +
+             `<button type="button" class="contact__opt" role="menuitem" data-phone="${p}" onclick="window.savePhoneContact(this)"><i class="ri-user-add-line"></i> <span>Save to contacts</span></button>` +
+             `<button type="button" class="contact__opt" role="menuitem" data-phone="${p}" onclick="window.copyPhoneNumber(this, this.getAttribute('data-phone'))"><i class="ri-file-copy-line"></i> <span>Copy number</span></button>` +
+             `</div></div></div></div>`;
          }
 
          function renderProfile(card, isOwner) {
@@ -1021,12 +1082,16 @@ window.addEventListener('scroll', scrollUp)
              let linksHtml = '';
              const phone = String(card.phoneNumber || '+91 00000 00000').trim();
              const phone2 = String(card.phoneNumber2 || '').trim();
-             if (phone) linksHtml += phoneRowHtml(phone);
-             if (phone2 && phone2 !== phone) linksHtml += phoneRowHtml(phone2);
+             if (phone) linksHtml += phoneRowHtml(phone, 0);
+             if (phone2 && phone2 !== phone) linksHtml += phoneRowHtml(phone2, 1);
              (Array.isArray(card.links) ? card.links : []).forEach((item) => {
                const url = normalizeUrl(item.url);
                if (!url) return;
-               linksHtml += `<a href="${esc(url)}" class="button" target="_blank" rel="noopener noreferrer">${esc(item.label)} <i class="ri-arrow-right-up-line"></i></a>`;
+               // email / phone links open the mail / dialer app directly (same tab); web links open in a new tab
+               const isMail = url.startsWith('mailto:'), isTel = url.startsWith('tel:');
+               const attrs = (isMail || isTel) ? '' : ' target="_blank" rel="noopener noreferrer"';
+               const icon = isMail ? 'ri-mail-send-line' : isTel ? 'ri-phone-line' : 'ri-arrow-right-up-line';
+               linksHtml += `<a href="${esc(url)}" class="button"${attrs}>${esc(item.label)} <i class="${icon}"></i></a>`;
              });
              publicLinks.innerHTML = linksHtml;
            }

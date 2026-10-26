@@ -53,6 +53,37 @@ input, button, textarea, select { border: none; outline: none; background: none;
 #loader { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--body-color); display: flex; justify-content: center; align-items: center; z-index: 9999; }
 .spinner { width: 50px; height: 50px; border: 3px solid rgba(255,255,255,0.1); border-radius: 50%; border-top-color: var(--first-color); animation: spin 1s ease-in-out infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---- Photo cropper, upload status, previews ---- */
+.crop-modal { position: fixed; inset: 0; z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 1rem; background: rgba(0,0,0,0.88); }
+.crop-modal[hidden] { display: none; }
+.crop-panel { width: 100%; max-width: 760px; max-height: 100%; overflow-y: auto; background: var(--container-color); border: 1px solid var(--first-color); border-radius: 1rem; padding: 1.1rem; }
+.crop-head { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; color: var(--white-color); }
+.crop-step { color: var(--first-color); font-size: var(--small-font-size); }
+.crop-help { color: var(--text-color); font-size: var(--small-font-size); margin: .4rem 0 .9rem; line-height: 1.5; }
+.crop-stage { position: relative; width: fit-content; max-width: calc(100% - 24px); margin: 12px auto; touch-action: none; user-select: none; -webkit-user-select: none; line-height: 0; }
+.crop-img { display: block; max-width: 100%; max-height: 50vh; width: auto; height: auto; pointer-events: none; -webkit-user-drag: none; border-radius: 4px; }
+.crop-dim { position: absolute; inset: 0; background: rgba(0,0,0,0.62); pointer-events: none; border-radius: 4px; }
+.crop-box { position: absolute; border: 2px solid var(--first-color); cursor: move; touch-action: none; box-sizing: border-box;
+  background-image: linear-gradient(to right, transparent calc(33.33% - .5px), rgba(255,255,255,.35) calc(33.33% - .5px) calc(33.33% + .5px), transparent calc(33.33% + .5px) calc(66.66% - .5px), rgba(255,255,255,.35) calc(66.66% - .5px) calc(66.66% + .5px), transparent calc(66.66% + .5px)),
+                    linear-gradient(to bottom, transparent calc(33.33% - .5px), rgba(255,255,255,.35) calc(33.33% - .5px) calc(33.33% + .5px), transparent calc(33.33% + .5px) calc(66.66% - .5px), rgba(255,255,255,.35) calc(66.66% - .5px) calc(66.66% + .5px), transparent calc(66.66% + .5px)); }
+.crop-h { position: absolute; width: 22px; height: 22px; background: var(--first-color); border: 2px solid #fff; border-radius: 50%; touch-action: none; box-sizing: border-box; }
+.crop-h[data-h="nw"] { left: -11px; top: -11px; cursor: nwse-resize; }
+.crop-h[data-h="ne"] { right: -11px; top: -11px; cursor: nesw-resize; }
+.crop-h[data-h="sw"] { left: -11px; bottom: -11px; cursor: nesw-resize; }
+.crop-h[data-h="se"] { right: -11px; bottom: -11px; cursor: nwse-resize; }
+.crop-chips { display: flex; gap: .5rem; justify-content: center; margin: .5rem 0 .4rem; }
+.crop-chip { padding: .4rem .9rem; border: 1px solid #444; border-radius: 2rem; color: var(--white-color); font-size: var(--small-font-size); cursor: pointer; }
+.crop-chip.active { border-color: var(--first-color); color: var(--first-color); }
+.crop-actions { display: flex; flex-wrap: wrap; gap: .6rem; justify-content: flex-end; margin-top: .8rem; }
+.crop-btn { padding: .7rem 1.1rem; border-radius: 2rem; font-weight: 600; font-size: .85rem; cursor: pointer; }
+.crop-btn.ghost { border: 1px solid #555; color: var(--white-color); }
+.crop-btn.primary { background: var(--first-color); color: #fff; }
+.img-status { display: block; margin: -.2rem 0 .5rem; font-size: var(--small-font-size); color: var(--text-color); }
+.img-status:empty { display: none; }
+.img-status.ok { color: #6fdc8c; } .img-status.warn { color: #ffb347; } .img-status.bad { color: #ff6b6b; }
+.img-preview { display: none; width: 100%; max-width: 240px; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; border: 1px solid #333; margin-bottom: .6rem; }
+.storage-notice { margin: 0 0 1.2rem; padding: .8rem 1rem; border: 1px solid #ffb347; border-radius: 8px; color: #ffb347; font-size: var(--small-font-size); line-height: 1.55; }
       </style>
    </head>
    <body>
@@ -108,6 +139,8 @@ input, button, textarea, select { border: none; outline: none; background: none;
                <div class="title-preview" id="preview-work-title"></div>
                <div id="edit-projects-container"></div>
                <button type="button" class="add-btn" id="add-project-btn">+ Add Project</button>
+         <button type="button" class="add-btn" id="add-project-photos-btn">+ Add Several Projects from Photos (select many)</button>
+         <input type="file" id="project-photos-input" accept="image/*" multiple hidden>
             </div>
             <button type="button" class="add-btn sec-restore-btn" style="display: none;">+ Add Work / Projects Section Back</button>
          </div>
@@ -169,6 +202,7 @@ input, button, textarea, select { border: none; outline: none; background: none;
          import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
          import { initializeAuth, browserSessionPersistence, signOut } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
          import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+         import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-storage.js";
 
          const firebaseConfig = {
            apiKey: "AIzaSyA043mcgewwke4Rt2HusOPbcxgmzUv2bM0",
@@ -184,6 +218,8 @@ input, button, textarea, select { border: none; outline: none; background: none;
          // NO GHOST SESSIONS: login lives in sessionStorage only (this tab, gone when the tab closes).
          const auth = initializeAuth(app, { persistence: browserSessionPersistence });
          const db = getFirestore(app);
+         const storage = getStorage(app);
+         storage.maxUploadRetryTime = 20000;   // give up (and use the fallback) instead of retrying for minutes
 
          // The card ID comes from the URL and ONLY from the URL (the old sessionStorage fallback is gone).
          try { sessionStorage.removeItem('savedUserSlug'); localStorage.removeItem('savedUserSlug'); } catch (_) {}
@@ -242,46 +278,294 @@ input, button, textarea, select { border: none; outline: none; background: none;
            return normalizeUrl(value, ['http:', 'https:']);
          }
 
-         function compressImageFile(file, maxWidth, callback) {
-           const reader = new FileReader();
-           reader.onload = function(event) {
-             const img = new Image();
-             img.onload = function() {
-               const canvas = document.createElement('canvas');
-               
-               // Automatically upgrades 400px/500px limits to 1200px HD
-               const targetMax = Math.max(maxWidth || 1200, 1200);
-               let width = img.width;
-               let height = img.height;
+/* ======================================================================================
+           PHOTOS:  pick  ->  crop  ->  resize (sharp)  ->  upload to Firebase Storage  ->  only the URL goes into the card.
+           Photos used to be stored as text INSIDE the card document. Firestore limits a whole document to
+           1 MB, so 4-5 good photos filled it up ("file too big"). Now every photo is its own file in Storage.
+           ====================================================================================== */
+         const IMAGE_MAX_EDGE = 1920;        // longest side in pixels (full-HD: sharp even on retina phones)
+         const IMAGE_QUALITY = 0.92;         // WebP quality (visually lossless)
+         const INLINE_FALLBACK_MAX_CHARS = 140000;
 
-               // Only shrink if the uploaded photo is wider than 1200px (prevents stretching smaller images)
-               if (width > targetMax) {
-                 height = Math.round(height * (targetMax / width));
-                 width = targetMax;
-               }
+         let pendingUploads = 0;
+         let storageProblem = null;
+         const clamp = (v, lo, hi) => Math.min(Math.max(v, lo), Math.max(lo, hi));
 
-               canvas.width = width;
-               canvas.height = height;
+         function showStorageNotice() {
+           if ($('storage-notice')) return;
+           const note = document.createElement('div');
+           note.id = 'storage-notice';
+           note.className = 'storage-notice';
+           const code = storageProblem && (storageProblem.code || storageProblem.message) ? ` (${storageProblem.code || storageProblem.message})` : '';
+           note.textContent = "Cloud photo storage is not set up for this project yet, so photos are being kept at a reduced size inside the card (only a few fit). To keep full quality and add as many photos as you like, enable Firebase Storage and publish the storage rules." + code;
+           const h2 = document.querySelector('.edit-modal-content h2');
+           if (h2) h2.insertAdjacentElement('afterend', note);
+         }
 
-               const ctx = canvas.getContext('2d');
-               
-               // Enable high-quality smoothing so edges and text stay sharp
-               ctx.imageSmoothingEnabled = true;
-               ctx.imageSmoothingQuality = 'high';
-               
-               ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+         const canvasToBlob = (canvas, type, quality) => new Promise((resolve) => canvas.toBlob(resolve, type, quality));
+         const blobToDataUrl = (blob) => new Promise((resolve, reject) => { const r = new FileReader(); r.onload = () => resolve(r.result); r.onerror = reject; r.readAsDataURL(blob); });
 
-               // Export as sharp WebP (smaller file size for Firebase), with automatic fallback to 92% JPEG
-               let dataUrl = canvas.toDataURL('image/webp', 0.92);
-               if (!dataUrl.startsWith('data:image/webp')) {
-                 dataUrl = canvas.toDataURL('image/jpeg', 0.92);
-               }
-               callback(dataUrl);
+         function scaleCanvas(canvas, maxEdge) {
+           const k = Math.min(1, maxEdge / Math.max(canvas.width, canvas.height));
+           if (k >= 1) return canvas;
+           const c = document.createElement('canvas');
+           c.width = Math.max(1, Math.round(canvas.width * k)); c.height = Math.max(1, Math.round(canvas.height * k));
+           const ctx = c.getContext('2d'); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+           ctx.drawImage(canvas, 0, 0, c.width, c.height);
+           return c;
+         }
+
+         // WebP where the browser supports it, otherwise JPEG (flattened on white so transparency doesn't turn black)
+         async function encodeCanvas(canvas, quality = IMAGE_QUALITY) {
+           const webp = await canvasToBlob(canvas, 'image/webp', quality);
+           if (webp && webp.type === 'image/webp') return webp;
+           const flat = document.createElement('canvas'); flat.width = canvas.width; flat.height = canvas.height;
+           const fctx = flat.getContext('2d'); fctx.fillStyle = '#fff'; fctx.fillRect(0, 0, flat.width, flat.height); fctx.drawImage(canvas, 0, 0);
+           return canvasToBlob(flat, 'image/jpeg', quality);
+         }
+
+         async function uploadImageBlob(blob) {
+           const ext = blob.type === 'image/webp' ? 'webp' : (blob.type === 'image/png' ? 'png' : 'jpg');
+           const name = `cards/${userSlug}/${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+           const r = storageRef(storage, name);
+           await withTimeout(uploadBytes(r, blob, { contentType: blob.type, cacheControl: 'public,max-age=31536000,immutable' }), 45000);
+           return withTimeout(getDownloadURL(r), 15000);
+         }
+
+         // 1) Cloud Storage at full quality.  2) If Storage isn't available: a small copy kept inside the card.
+         async function storeImage(canvas) {
+           try {
+             const url = await uploadImageBlob(await encodeCanvas(canvas));
+             return { url, inline: false };
+           } catch (err) {
+             console.warn('Cloud Storage upload failed, using the small inline copy instead:', err);
+             storageProblem = err; showStorageNotice();
+             let dataUrl = '';
+             for (const edge of [1100, 900, 720, 560]) {
+               dataUrl = await blobToDataUrl(await encodeCanvas(scaleCanvas(canvas, edge), 0.85));
+               if (dataUrl.length <= INLINE_FALLBACK_MAX_CHARS) break;
+             }
+             return { url: dataUrl, inline: true };
+           }
+         }
+
+         function setStatus(el, text, kind = '') { if (el) { el.textContent = text; el.className = 'img-status ' + kind; } }
+
+         async function uploadIntoField(canvas, urlInput, statusEl, onDone) {
+           pendingUploads++;
+           setStatus(statusEl, 'Uploading photo...');
+           try {
+             const r = await storeImage(canvas);
+             urlInput.value = r.url;
+             setStatus(statusEl, r.inline ? 'Kept at reduced size (cloud storage not set up yet)' : 'Photo uploaded', r.inline ? 'warn' : 'ok');
+             if (onDone) onDone();
+           } catch (err) {
+             console.error('Photo upload failed:', err);
+             setStatus(statusEl, 'Upload failed - please try again', 'bad');
+           } finally { pendingUploads--; }
+         }
+
+         /* ---------------- the crop window ---------------- */
+         let cropModalEl = null;
+         function ensureCropModal() {
+           if (cropModalEl) return cropModalEl;
+           const m = document.createElement('div');
+           m.className = 'crop-modal'; m.hidden = true;
+           m.innerHTML = `
+             <div class="crop-panel" role="dialog" aria-modal="true" aria-label="Crop photo">
+               <div class="crop-head"><strong class="crop-title">Crop photo</strong><span class="crop-step"></span></div>
+               <p class="crop-help">Drag the box to choose what to keep. Drag a corner to make it bigger or smaller. Everything outside the box is removed.</p>
+               <div class="crop-stage">
+                 <img class="crop-img" alt="">
+                 <div class="crop-dim"></div>
+                 <div class="crop-box"><i class="crop-h" data-h="nw"></i><i class="crop-h" data-h="ne"></i><i class="crop-h" data-h="sw"></i><i class="crop-h" data-h="se"></i></div>
+               </div>
+               <div class="crop-chips">
+                 <button type="button" class="crop-chip active" data-mode="lock">Fit shape</button>
+                 <button type="button" class="crop-chip" data-mode="free">Free crop</button>
+               </div>
+               <div class="crop-actions">
+                 <button type="button" class="crop-btn ghost" data-act="cancel">Cancel</button>
+                 <button type="button" class="crop-btn ghost" data-act="skip">Skip this photo</button>
+                 <button type="button" class="crop-btn ghost" data-act="full">Use full photo</button>
+                 <button type="button" class="crop-btn primary" data-act="ok">Crop &amp; Use</button>
+               </div>
+             </div>`;
+           document.body.appendChild(m);
+           cropModalEl = m;
+           return m;
+         }
+
+         // Resolves to { canvas } (cropped / full photo), { skipped: true } or { aborted: true }
+         function openCropper(file, { aspect = null, title = 'Crop photo', step = '', bulk = false } = {}) {
+           return new Promise((resolve) => {
+             const m = ensureCropModal();
+             const img = m.querySelector('.crop-img'), stage = m.querySelector('.crop-stage'), box = m.querySelector('.crop-box'), dim = m.querySelector('.crop-dim');
+             const chips = m.querySelector('.crop-chips');
+             const MIN = 48;
+             let dw = 0, dh = 0, nw = 0, nh = 0, mode = aspect ? 'lock' : 'free', drag = null;
+             const b = { x: 0, y: 0, w: 0, h: 0 };
+             const url = URL.createObjectURL(file);
+
+             m.querySelector('.crop-title').textContent = title;
+             m.querySelector('.crop-step').textContent = step;
+             m.querySelector('[data-act="skip"]').style.display = bulk ? '' : 'none';
+             m.querySelector('[data-act="cancel"]').textContent = bulk ? 'Cancel all' : 'Cancel';
+             chips.style.display = aspect ? '' : 'none';
+             const lockChip = chips.querySelector('[data-mode="lock"]');
+             lockChip.textContent = aspect && Math.abs(aspect - 1) < 0.01 ? 'Square' : (aspect ? 'Card shape (16:9)' : 'Fit shape');
+             const setChips = () => chips.querySelectorAll('.crop-chip').forEach(c => c.classList.toggle('active', c.dataset.mode === mode));
+             setChips();
+
+             const render = () => {
+               box.style.left = b.x + 'px'; box.style.top = b.y + 'px'; box.style.width = b.w + 'px'; box.style.height = b.h + 'px';
+               const x1 = b.x, y1 = b.y, x2 = b.x + b.w, y2 = b.y + b.h;
+               dim.style.clipPath = `polygon(evenodd, 0 0, ${dw}px 0, ${dw}px ${dh}px, 0 ${dh}px, 0 0, ${x1}px ${y1}px, ${x1}px ${y2}px, ${x2}px ${y2}px, ${x2}px ${y1}px, ${x1}px ${y1}px)`;
              };
-             img.onerror = () => alert("That file couldn't be read as an image. Please choose another photo.");
-             img.src = event.target.result;
+             const fitBox = () => {
+               if (mode === 'lock' && aspect) {
+                 let w = dw, h = w / aspect;
+                 if (h > dh) { h = dh; w = h * aspect; }
+                 b.w = w; b.h = h; b.x = (dw - w) / 2; b.y = (dh - h) / 2;
+               } else { b.x = 0; b.y = 0; b.w = dw; b.h = dh; }
+             };
+             const measure = () => { dw = img.clientWidth; dh = img.clientHeight; };
+
+             const onDown = (e) => {
+               const h = e.target.closest ? e.target.closest('.crop-h') : null;
+               drag = { type: h ? 'resize' : 'move', h: h ? h.dataset.h : '', sx: e.clientX, sy: e.clientY, b: { ...b } };
+               try { box.setPointerCapture(e.pointerId); } catch (_) {}
+               e.preventDefault();
+             };
+             const onMove = (e) => {
+               if (!drag) return;
+               if (drag.type === 'move') {
+                 b.x = clamp(drag.b.x + (e.clientX - drag.sx), 0, dw - b.w);
+                 b.y = clamp(drag.b.y + (e.clientY - drag.sy), 0, dh - b.h);
+               } else {
+                 const r = stage.getBoundingClientRect();
+                 const px = clamp(e.clientX - r.left, 0, dw), py = clamp(e.clientY - r.top, 0, dh);
+                 const east = drag.h.includes('e'), south = drag.h.includes('s');
+                 const ax = east ? drag.b.x : drag.b.x + drag.b.w;           // the opposite corner stays where it is
+                 const ay = south ? drag.b.y : drag.b.y + drag.b.h;
+                 const roomX = east ? dw - ax : ax, roomY = south ? dh - ay : ay;
+                 let w = (east ? px >= ax : px <= ax) ? Math.abs(px - ax) : 0;
+                 let h = (south ? py >= ay : py <= ay) ? Math.abs(py - ay) : 0;
+                 if (mode === 'lock' && aspect) {
+                   const maxW = Math.min(roomX, roomY * aspect);
+                   w = clamp(Math.max(w, h * aspect), Math.min(MIN, maxW), maxW);
+                   h = w / aspect;
+                 } else {
+                   w = clamp(w, Math.min(MIN, roomX), roomX); h = clamp(h, Math.min(MIN, roomY), roomY);
+                 }
+                 b.w = w; b.h = h; b.x = east ? ax : ax - w; b.y = south ? ay : ay - h;
+               }
+               render();
+             };
+             const onUp = () => { drag = null; };
+             box.addEventListener('pointerdown', onDown);
+             box.addEventListener('pointermove', onMove);
+             box.addEventListener('pointerup', onUp);
+             box.addEventListener('pointercancel', onUp);
+
+             const onChip = (e) => {
+               const c = e.target.closest('.crop-chip'); if (!c) return;
+               mode = c.dataset.mode; setChips();
+               if (mode === 'lock') { fitBox(); render(); }
+             };
+             chips.addEventListener('click', onChip);
+
+             const onResize = () => {
+               if (!dw) return;
+               const ow = dw, oh = dh; measure(); if (!dw) return;
+               b.x *= dw / ow; b.w *= dw / ow; b.y *= dh / oh; b.h *= dh / oh; render();
+             };
+             window.addEventListener('resize', onResize);
+
+             // Turns the chosen box (or the full photo) into a canvas at the photo's real resolution, capped at IMAGE_MAX_EDGE.
+             const makeCanvas = (full) => {
+               const k = nw / dw;
+               const rx = full ? 0 : b.x * k, ry = full ? 0 : b.y * k;
+               const sw = Math.min(full ? nw : b.w * k, nw - rx), sh = Math.min(full ? nh : b.h * k, nh - ry);
+               const scale = Math.min(1, IMAGE_MAX_EDGE / Math.max(sw, sh));
+               const c = document.createElement('canvas');
+               c.width = Math.max(1, Math.round(sw * scale)); c.height = Math.max(1, Math.round(sh * scale));
+               const ctx = c.getContext('2d'); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+               ctx.drawImage(img, rx, ry, sw, sh, 0, 0, c.width, c.height);
+               return c;
+             };
+
+             const cleanup = () => {
+               box.removeEventListener('pointerdown', onDown); box.removeEventListener('pointermove', onMove);
+               box.removeEventListener('pointerup', onUp); box.removeEventListener('pointercancel', onUp);
+               chips.removeEventListener('click', onChip); window.removeEventListener('resize', onResize);
+               m.removeEventListener('click', onAction); document.removeEventListener('keydown', onKey);
+               m.hidden = true; img.removeAttribute('src'); URL.revokeObjectURL(url);
+               document.body.style.overflow = '';
+             };
+             const done = (result) => { cleanup(); resolve(result); };
+             const onAction = (e) => {
+               const act = e.target.closest('[data-act]'); if (!act) return;
+               const a = act.dataset.act;
+               if (a === 'ok') done({ canvas: makeCanvas(false) });
+               else if (a === 'full') done({ canvas: makeCanvas(true) });
+               else if (a === 'skip') done({ skipped: true });
+               else done({ aborted: true });
+             };
+             const onKey = (e) => { if (e.key === 'Escape') done({ aborted: true }); };
+             m.addEventListener('click', onAction);
+             document.addEventListener('keydown', onKey);
+
+             img.onerror = () => { cleanup(); alert("That file couldn't be read as an image. Please choose another photo."); resolve(bulk ? { skipped: true } : { aborted: true }); };
+             img.onload = () => {
+               nw = img.naturalWidth; nh = img.naturalHeight;
+               measure(); fitBox(); render();
+               const ok = m.querySelector('[data-act="ok"]'); if (ok) ok.focus({ preventScroll: true });
+             };
+             document.body.style.overflow = 'hidden';
+             m.hidden = false;
+             img.src = url;
+           });
+         }
+
+         /* One image field = [URL box] + [file picker] + preview + status. Picking a file opens the crop window. */
+         function setupImageField({ fileInput, urlInput, aspect, label, preview }) {
+           const status = document.createElement('small');
+           status.className = 'img-status';
+           fileInput.insertAdjacentElement('afterend', status);
+           let pv = preview;
+           if (!pv) { pv = document.createElement('img'); pv.className = 'img-preview'; pv.alt = ''; status.insertAdjacentElement('afterend', pv); }
+           const refresh = () => {
+             const src = safeImageSrc(urlInput.value);
+             if (src) { pv.src = src; pv.style.display = 'block'; } else { pv.removeAttribute('src'); pv.style.display = 'none'; }
            };
-           reader.readAsDataURL(file);
+           urlInput.addEventListener('input', refresh);
+           refresh();
+           fileInput.addEventListener('change', async () => {
+             const file = fileInput.files[0];
+             fileInput.value = '';
+             if (!file) return;
+             const res = await openCropper(file, { aspect, title: 'Crop ' + label });
+             if (res.canvas) await uploadIntoField(res.canvas, urlInput, status, refresh);
+           });
+           return status;
+         }
+
+         // Photos saved by older versions live INSIDE the card as text. Move them to Storage (original bytes, no quality loss).
+         async function migrateInlineImages() {
+           const inputs = [...document.querySelectorAll('.proj-img, .custom-card-img, #edit-avatar-url')]
+             .filter(el => /^data:image\//i.test(el.value) && el.value.length > 30000);
+           for (const el of inputs) {
+             try {
+               const blob = await (await fetch(el.value)).blob();
+               el.value = await uploadImageBlob(blob);
+               el.dispatchEvent(new Event('input', { bubbles: true }));
+             } catch (err) {
+               console.warn('Could not move a photo to cloud storage:', err);
+               storageProblem = err; showStorageNotice();
+               break;
+             }
+           }
          }
 
          const userSlug = (new URLSearchParams(window.location.search).get('user') || '').trim();
@@ -470,7 +754,7 @@ input, button, textarea, select { border: none; outline: none; background: none;
            const container = $('edit-projects-container');
            if (container.querySelectorAll('.dynamic-row').length >= 10) {
              alert("Maximum 10 projects allowed.");
-             return;
+             return null;
            }
            const div = document.createElement('div');
            div.className = 'dynamic-row';
@@ -487,17 +771,35 @@ input, button, textarea, select { border: none; outline: none; background: none;
            div.querySelector('.proj-img').value = imgUrl || '';
            div.querySelector('.proj-link').value = link || '';
 
-           div.querySelector('.proj-img-file').addEventListener('change', function(e) {
-             const file = e.target.files[0];
-             if (!file) return;
-             compressImageFile(file, 500, (dataUrl) => {
-               div.querySelector('.proj-img').value = dataUrl;
-             });
-           });
+           const projStatus = setupImageField({ fileInput: div.querySelector('.proj-img-file'), urlInput: div.querySelector('.proj-img'), aspect: 16 / 9, label: 'project photo' });
+           div._imgStatus = projStatus;
 
            container.appendChild(div);
+           return div;
          }
          $('add-project-btn').addEventListener('click', () => addAdminProject());
+
+         // Pick many photos at once: each one is cropped in turn and becomes its own project (max 10 projects in total).
+         $('add-project-photos-btn').addEventListener('click', () => $('project-photos-input').click());
+         $('project-photos-input').addEventListener('change', async () => {
+           const input = $('project-photos-input');
+           const files = [...input.files];
+           input.value = '';
+           if (!files.length) return;
+           const room = 10 - $('edit-projects-container').querySelectorAll('.dynamic-row').length;
+           if (room <= 0) { alert("Maximum 10 projects allowed."); return; }
+           const use = files.slice(0, room);
+           if (files.length > room) alert(`Only ${room} more project${room === 1 ? '' : 's'} fit (maximum 10). The first ${room} photo${room === 1 ? '' : 's'} will be used.`);
+           for (let i = 0; i < use.length; i++) {
+             const res = await openCropper(use[i], { aspect: 16 / 9, title: 'Crop project photo', step: `Photo ${i + 1} of ${use.length}`, bulk: true });
+             if (res.aborted) break;
+             if (res.skipped) continue;
+             const row = addAdminProject();
+             if (!row) break;
+             // the upload runs in the background while the next photo is being cropped
+             uploadIntoField(res.canvas, row.querySelector('.proj-img'), row._imgStatus, () => row.querySelector('.proj-img').dispatchEvent(new Event('input', { bubbles: true })));
+           }
+         });
 
          // 3. Services (Limit: 6 Max, up to 5 Perks each)
          function addPerkInput(perksContainer, perkText = '') {
@@ -633,13 +935,7 @@ input, button, textarea, select { border: none; outline: none; background: none;
            box.querySelector('.custom-card-img').value = cardData.imageUrl || '';
            box.querySelector('.custom-card-link').value = cardData.link || '';
 
-           box.querySelector('.custom-card-img-file').addEventListener('change', function(e) {
-             const file = e.target.files[0];
-             if (!file) return;
-             compressImageFile(file, 500, (dataUrl) => {
-               box.querySelector('.custom-card-img').value = dataUrl;
-             });
-           });
+           setupImageField({ fileInput: box.querySelector('.custom-card-img-file'), urlInput: box.querySelector('.custom-card-img'), aspect: 16 / 9, label: 'card photo' });
 
            const itemsList = box.querySelector('.custom-card-items-list');
            const initialItems = Array.isArray(cardData.items) && cardData.items.length ? cardData.items : [''];
@@ -714,7 +1010,7 @@ input, button, textarea, select { border: none; outline: none; background: none;
            div.innerHTML = `
               <i class="ri-close-line remove-btn" onclick="removeRow(this)"></i>
               <input type="text" class="edit-input link-label" placeholder="Button Name (e.g., Instagram)">
-              <input type="text" class="edit-input link-url" placeholder="Link to Redirect (https://...)">
+              <input type="text" class="edit-input link-url" placeholder="Link (https://...) or email (name@gmail.com)">
            `;
            div.querySelector('.link-label').value = label || '';
            div.querySelector('.link-url').value = url || '';
@@ -742,15 +1038,7 @@ input, button, textarea, select { border: none; outline: none; background: none;
          $('add-phone2-btn').addEventListener('click', () => addAdminPhone2());
 
          /* ---------------- profile photo upload & URL preview ---------------- */
-         $('edit-avatar-file').addEventListener('change', function(e) {
-           const file = e.target.files[0];
-           if (!file) return;
-           compressImageFile(file, 400, (dataUrl) => {
-             $('edit-avatar-url').value = dataUrl;
-             $('avatar-preview').src = dataUrl;
-             $('avatar-preview').style.display = 'block';
-           });
-         });
+         setupImageField({ fileInput: $('edit-avatar-file'), urlInput: $('edit-avatar-url'), aspect: 1, label: 'profile photo', preview: $('avatar-preview') });
 
          $('edit-avatar-url').addEventListener('input', function() {
            const valid = safeImageSrc(this.value);
@@ -854,13 +1142,20 @@ input, button, textarea, select { border: none; outline: none; background: none;
          });
 
          /* ---------------- save ---------------- */
-         let saving = false;
+         let saving = false, migrating = false;
          $('edit-save-btn').addEventListener('click', async () => {
-           if (saving) return;
+           if (saving || migrating) return;
            const btn = $('edit-save-btn');
            const idleLabel = btn.innerText;
 
            if (!auth.currentUser) { goToProfile(); return; }
+
+           if (pendingUploads > 0) {
+             alert("Your photos are still uploading. Please wait a few seconds, then press Save again.");
+             return;
+           }
+           migrating = true; btn.innerText = "Preparing photos...";
+           try { await migrateInlineImages(); } finally { migrating = false; btn.innerText = idleLabel; }
 
            const rawPhone = $('edit-phone').value.trim();
            if (!rawPhone) {
@@ -1056,8 +1351,12 @@ input, button, textarea, select { border: none; outline: none; background: none;
              links
            };
 
-           if (JSON.stringify(payload).length > 900000) {
-             alert("Your profile is too large to save. Please use a smaller photo.");
+           const payloadChars = JSON.stringify(payload).length;
+           if (payloadChars > 900000) {
+             alert(`Your card is too big to save (${Math.round(payloadChars / 1024)} KB, the limit is about 880 KB).\n\n` +
+               (storageProblem
+                 ? "Photos can't go to cloud storage yet, so they are being stored inside the card. Enable Firebase Storage (see the notice at the top of this page) or remove a few photos."
+                 : "Remove a few photos or text and try again."));
              return;
            }
 
