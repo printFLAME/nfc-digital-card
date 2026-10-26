@@ -651,11 +651,11 @@ window.copyPhoneNumber = function(btn, number) {
    }
 };
 
-// SAVE TO CONTACTS. A web page is not allowed to write into the phone book or open a blank
-// "new contact" form by itself, so the contact (name + number) is handed to the phone as a contact card:
-//  - iPhone / iPad : the card opens straight in Apple's "Add Contact" screen (nothing is downloaded)
-//  - Android       : the share sheet opens with the card, pick "Contacts" and tap Save (no file is stored)
-//  - other devices : the card is downloaded as a .vcf file
+// SAVE TO CONTACTS
+//  - Android : opens the phone's "Save to Google" new-contact screen with name + number already filled in (no file)
+//              (if that is blocked by the browser it falls back to the share sheet, then to a .vcf download)
+//  - iPhone  : opens the contact card in Apple's "Add Contact" screen
+//  - Computer: downloads a .vcf file
 window.savePhoneContact = function(btn) {
    const phone = String(btn.getAttribute('data-phone') || '').trim();
    const compact = phone.replace(/[^\d+]/g, '');
@@ -700,28 +700,60 @@ window.savePhoneContact = function(btn) {
       setTimeout(() => URL.revokeObjectURL(url), 10000);
       finish('Contact file ready');
    };
+   const shareOrDownload = () => {
+      try {
+         if (typeof File === 'function' && navigator.canShare && navigator.share) {
+            const file = new File([blob], fileName, { type: 'text/vcard' });
+            if (navigator.canShare({ files: [file] })) {
+               navigator.share({ files: [file], title: name })
+                  .then(() => finish('Done'))
+                  .catch((err) => { if (!err || err.name !== 'AbortError') download(); });
+               return;
+            }
+         }
+      } catch (e) { /* use the download below */ }
+      download();
+   };
 
    const ua = navigator.userAgent || '';
    const isIOS = /iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
    const isAndroid = /Android/i.test(ua);
 
    if (isIOS) {
-      // no "download" attribute: iOS then shows the contact card with its own Add Contact button
+      // no "download" attribute: iOS shows the contact card with its own Add Contact button
       clickLink(URL.createObjectURL(blob));
       finish('Opening...');
       return;
    }
-   if (isAndroid && typeof File === 'function' && navigator.canShare && navigator.share) {
-      try {
-         const file = new File([blob], fileName, { type: 'text/vcard' });
-         if (navigator.canShare({ files: [file] })) {
-            navigator.share({ files: [file], title: name })
-               .then(() => finish('Done'))
-               .catch((err) => { if (!err || err.name !== 'AbortError') download(); });
-            return;
-         }
-      } catch (e) { /* fall through to the download */ }
+
+   if (isAndroid) {
+      // Asks Android to open its own "new contact" screen with the name and number filled in.
+      // It is loaded in a hidden frame, so a browser that refuses it can never throw the card page away.
+      const intentUrl = 'intent:#Intent;action=android.intent.action.INSERT;type=vnd.android.cursor.dir/contact'
+         + ';S.name=' + encodeURIComponent(name)
+         + ';S.phone=' + encodeURIComponent(compact)
+         + ';i.phone_type=2;B.finishActivityOnSaveCompleted=true;end';
+
+      let appOpened = false;
+      const onLeave = () => { if (document.visibilityState === 'hidden') appOpened = true; };
+      document.addEventListener('visibilitychange', onLeave);
+      window.addEventListener('pagehide', onLeave);
+
+      const frame = document.createElement('iframe');
+      frame.style.display = 'none';
+      frame.src = intentUrl;
+      document.body.appendChild(frame);
+
+      setTimeout(() => {
+         document.removeEventListener('visibilitychange', onLeave);
+         window.removeEventListener('pagehide', onLeave);
+         if (frame.parentNode) frame.parentNode.removeChild(frame);
+         if (appOpened) finish('Opening...');   // the Contacts screen came up
+         else shareOrDownload();                // this browser blocked it: share sheet, then file
+      }, 1400);
+      return;
    }
+
    download();
 };
 
