@@ -84,6 +84,13 @@ input, button, textarea, select { border: none; outline: none; background: none;
 .img-status.ok { color: #6fdc8c; } .img-status.warn { color: #ffb347; } .img-status.bad { color: #ff6b6b; }
 .img-preview { display: none; width: 100%; max-width: 240px; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; border: 1px solid #333; margin-bottom: .6rem; }
 .storage-notice { margin: 0 0 1.2rem; padding: .8rem 1rem; border: 1px solid #ffb347; border-radius: 8px; color: #ffb347; font-size: var(--small-font-size); line-height: 1.55; }
+#avatar-preview.shape-window    { border-radius: 20rem 20rem 2rem 2rem !important; aspect-ratio: 1/1; height: auto !important; clip-path: none; }
+#avatar-preview.shape-circle    { border-radius: 50% !important; aspect-ratio: 1/1; height: auto !important; clip-path: none; }
+#avatar-preview.shape-square    { border-radius: 12px !important; aspect-ratio: 1/1; height: auto !important; clip-path: none; }
+#avatar-preview.shape-rectangle { border-radius: 12px !important; aspect-ratio: 3/4; height: auto !important; clip-path: none; }
+#avatar-preview.shape-penta     { border-radius: 0 !important; border: none !important; aspect-ratio: 1/1; height: auto !important; clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%); }
+#avatar-preview.shape-hexa      { border-radius: 0 !important; border: none !important; aspect-ratio: 1/1; height: auto !important; clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); }
+#avatar-preview.shape-heptagon  { border-radius: 0 !important; border: none !important; aspect-ratio: 1/1; height: auto !important; clip-path: polygon(50% 0%, 90% 20%, 100% 60%, 75% 100%, 25% 100%, 0% 60%, 10% 20%); }
       </style>
    </head>
    <body>
@@ -124,6 +131,17 @@ input, button, textarea, select { border: none; outline: none; background: none;
          <input type="text" id="edit-avatar-url" class="edit-input" placeholder="Paste hosted image URL (or upload below)">
          <input type="file" id="edit-avatar-file" class="edit-input" accept="image/*" style="padding: 8px; background: rgba(0,0,0,0.2);">
          <img id="avatar-preview" src="" style="width: 90px; height: 90px; display: none; border-radius: 12px; margin-top: 10px; border: 2px solid var(--first-color); object-fit: cover;">
+        
+         <label>Profile Picture Shape</label>
+         <select id="edit-avatar-shape" class="edit-input">
+            <option value="window">Window (Default Arch)</option>
+            <option value="circle">Circle</option>
+            <option value="square">Square</option>
+            <option value="rectangle">Rectangle</option>
+            <option value="penta">Pentagon</option>
+            <option value="hexa">Hexagon</option>
+            <option value="heptagon">Heptagon</option>
+         </select>
 
          <!--==================== ABOUT SECTION ====================-->
          <h3>About Section</h3>
@@ -1048,6 +1066,16 @@ input, button, textarea, select { border: none; outline: none; background: none;
            }
          });
 
+         const AVATAR_SHAPES = ['window', 'circle', 'square', 'rectangle', 'penta', 'hexa', 'heptagon'];
+         function applyAvatarPreviewShape(shape) {
+           const valid = AVATAR_SHAPES.includes(shape) ? shape : 'window';
+           $('edit-avatar-shape').value = valid;
+           const pv = $('avatar-preview');
+           pv.classList.remove(...AVATAR_SHAPES.map(s => 'shape-' + s));
+           pv.classList.add('shape-' + valid);
+         }
+         $('edit-avatar-shape').addEventListener('change', (e) => applyAvatarPreviewShape(e.target.value));
+
          /* ---------------- load: owner-only with Default Fallbacks ---------------- */
          function populate(data) {
            setThemeHue(data.themeHue !== undefined && data.themeHue !== null && data.themeHue !== '' ? data.themeHue : DEFAULTS.themeHue);
@@ -1066,6 +1094,8 @@ input, button, textarea, select { border: none; outline: none; background: none;
              $('avatar-preview').src = avatar;
              $('avatar-preview').style.display = 'block';
            }
+
+          applyAvatarPreviewShape(data.avatarShape || 'window');
 
            $('edit-about-title').value = data.aboutTitle !== undefined ? data.aboutTitle : DEFAULTS.aboutTitle;
 
@@ -1177,6 +1207,7 @@ input, button, textarea, select { border: none; outline: none; background: none;
            const heroTag = $('edit-hero-tag').value.trim();
            const rawAvatar = $('edit-avatar-url').value.trim();
            const profileImageUrl = safeImageSrc(rawAvatar);
+           const avatarShape = AVATAR_SHAPES.includes($('edit-avatar-shape').value) ? $('edit-avatar-shape').value : 'window';
            const aboutTitle = $('edit-about-title').value.trim();
 
            // Section headings (empty = back to the default) and which built-in sections were deleted.
@@ -1336,6 +1367,7 @@ input, button, textarea, select { border: none; outline: none; background: none;
              description: heroTag,
              profileImageUrl,
              avatar: profileImageUrl,
+             avatarShape,
              aboutTitle,
              workTitle,
              serviceTitle,
