@@ -84,6 +84,15 @@ input, button, textarea, select { border: none; outline: none; background: none;
 .img-status.ok { color: #6fdc8c; } .img-status.warn { color: #ffb347; } .img-status.bad { color: #ff6b6b; }
 .img-preview { display: none; width: 100%; max-width: 240px; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; border: 1px solid #333; margin-bottom: .6rem; }
 .storage-notice { margin: 0 0 1.2rem; padding: .8rem 1rem; border: 1px solid #ffb347; border-radius: 8px; color: #ffb347; font-size: var(--small-font-size); line-height: 1.55; }
+/* Avatar Preview Shapes */
+.avatar-preview-wrap { display: inline-block; line-height: 0; }
+.avatar-preview-wrap:has(.shape-penta, .shape-hexa, .shape-heptagon) {
+  filter:
+    drop-shadow(1.5px 0 0 var(--first-color))
+    drop-shadow(-1.5px 0 0 var(--first-color))
+    drop-shadow(0 1.5px 0 var(--first-color))
+    drop-shadow(0 -1.5px 0 var(--first-color));
+}
 #avatar-preview.shape-window    { border-radius: 20rem 20rem 2rem 2rem !important; aspect-ratio: 1/1; height: auto !important; clip-path: none; }
 #avatar-preview.shape-circle    { border-radius: 50% !important; aspect-ratio: 1/1; height: auto !important; clip-path: none; }
 #avatar-preview.shape-square    { border-radius: 12px !important; aspect-ratio: 1/1; height: auto !important; clip-path: none; }
@@ -1067,12 +1076,17 @@ input, button, textarea, select { border: none; outline: none; background: none;
          });
 
          const AVATAR_SHAPES = ['window', 'circle', 'square', 'rectangle', 'penta', 'hexa', 'heptagon'];
+         const pvEl = $('avatar-preview');
+         const pvWrap = document.createElement('div');
+         pvWrap.className = 'avatar-preview-wrap';
+         pvEl.parentNode.insertBefore(pvWrap, pvEl);
+         pvWrap.appendChild(pvEl);
+
          function applyAvatarPreviewShape(shape) {
            const valid = AVATAR_SHAPES.includes(shape) ? shape : 'window';
            $('edit-avatar-shape').value = valid;
-           const pv = $('avatar-preview');
-           pv.classList.remove(...AVATAR_SHAPES.map(s => 'shape-' + s));
-           pv.classList.add('shape-' + valid);
+           pvEl.classList.remove(...AVATAR_SHAPES.map(s => 'shape-' + s));
+           pvEl.classList.add('shape-' + valid);
          }
          $('edit-avatar-shape').addEventListener('change', (e) => applyAvatarPreviewShape(e.target.value));
 
