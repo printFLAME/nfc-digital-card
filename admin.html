@@ -332,6 +332,7 @@ body { padding-bottom: 5.5rem; }
 
          let pendingUploads = 0;
          let storageProblem = null;
+         let storageDown = false;   // set after the first failed Storage call, so nothing waits on it again
          const clamp = (v, lo, hi) => Math.min(Math.max(v, lo), Math.max(lo, hi));
 
          function showStorageNotice() {
@@ -367,12 +368,12 @@ body { padding-bottom: 5.5rem; }
            return canvasToBlob(flat, 'image/jpeg', quality);
          }
 
-         async function uploadImageBlob(blob) {
+         async function uploadImageBlob(blob, uploadMs = 45000) {
            const ext = blob.type === 'image/webp' ? 'webp' : (blob.type === 'image/png' ? 'png' : 'jpg');
            const name = `cards/${userSlug}/${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
            const r = storageRef(storage, name);
-           await withTimeout(uploadBytes(r, blob, { contentType: blob.type, cacheControl: 'public,max-age=31536000,immutable' }), 45000);
-           return withTimeout(getDownloadURL(r), 15000);
+           await withTimeout(uploadBytes(r, blob, { contentType: blob.type, cacheControl: 'public,max-age=31536000,immutable' }), uploadMs);
+           return withTimeout(getDownloadURL(r), Math.min(15000, uploadMs));
          }
 
          // 1) Cloud Storage at full quality.  2) If Storage isn't available: a small copy kept inside the card.
@@ -382,7 +383,7 @@ body { padding-bottom: 5.5rem; }
              return { url, inline: false };
            } catch (err) {
              console.warn('Cloud Storage upload failed, using the small inline copy instead:', err);
-             storageProblem = err; showStorageNotice();
+             storageProblem = err; storageDown = true; showStorageNotice();
              let dataUrl = '';
              for (const edge of [1100, 900, 720, 560]) {
                dataUrl = await blobToDataUrl(await encodeCanvas(scaleCanvas(canvas, edge), 0.85));
@@ -595,20 +596,30 @@ body { padding-bottom: 5.5rem; }
          }
 
          // Photos saved by older versions live INSIDE the card as text. Move them to Storage (original bytes, no quality loss).
+         // This runs in the background when the page opens, so saving never has to wait for it. If Storage does not
+         // answer, it gives up after one short try and is not attempted again (the photos simply stay inside the card).
          async function migrateInlineImages() {
+           if (storageDown) return;
            const inputs = [...document.querySelectorAll('.proj-img, .custom-card-img, #edit-avatar-url')]
              .filter(el => /^data:image\//i.test(el.value) && el.value.length > 30000);
            for (const el of inputs) {
              try {
                const blob = await (await fetch(el.value)).blob();
-               el.value = await uploadImageBlob(blob);
-               el.dispatchEvent(new Event('input', { bubbles: true }));
+               el.value = await uploadImageBlob(blob, 12000);
+               el.dispatchEvent(new Event('input', { bubbles: false })); // refreshes the preview, does not count as an edit
              } catch (err) {
                console.warn('Could not move a photo to cloud storage:', err);
-               storageProblem = err; showStorageNotice();
+               storageProblem = err; storageDown = true; showStorageNotice();
                break;
              }
            }
+         }
+
+         const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+         let migrationRunning = false, migrationPromise = null;
+         function startBackgroundMigration() {
+           migrationRunning = true;
+           migrationPromise = migrateInlineImages().catch(() => {}).finally(() => { migrationRunning = false; });
          }
 
          const userSlug = (new URLSearchParams(window.location.search).get('user') || '').trim();
@@ -1196,6 +1207,7 @@ body { padding-bottom: 5.5rem; }
                }
              });
              loader.style.display = 'none';
+             startBackgroundMigration();
            } catch (err) {
              console.error("Load Error:", err);
              showLoadError();
@@ -1211,8 +1223,8 @@ body { padding-bottom: 5.5rem; }
          });
 
          /* ---------------- save ---------------- */
-         let saving = false, migrating = false;
-         $('edit-save-btn').addEventListener('click', async () => {
+         let saving = false, migrating = false, sizeRetryDone = false;
+         async function doSave() {
            if (saving || migrating) return;
            const btn = $('edit-save-btn');
            const idleLabel = btn.innerText;
@@ -1223,8 +1235,13 @@ body { padding-bottom: 5.5rem; }
              alert("Your photos are still uploading. Please wait a few seconds, then press Save again.");
              return;
            }
-           migrating = true; btn.innerText = "Preparing photos...";
-           try { await migrateInlineImages(); } finally { migrating = false; btn.innerText = idleLabel; }
+
+           // Saving does not wait for photo migration (it started when the page opened). Only if it is still busy,
+           // give it a couple of seconds so its photos can go into this save.
+           if (migrationRunning) {
+             migrating = true; btn.innerText = "Preparing photos...";
+             try { await Promise.race([migrationPromise, sleep(2500)]); } finally { migrating = false; btn.innerText = idleLabel; }
+           }
 
            const rawPhone = $('edit-phone').value.trim();
            if (!rawPhone) {
@@ -1423,6 +1440,12 @@ body { padding-bottom: 5.5rem; }
            };
 
            const payloadChars = JSON.stringify(payload).length;
+           if (payloadChars > 900000 && !sizeRetryDone && !storageDown) {
+             // Too big because of photos stored inside the card: move them to Storage once, then save again.
+             sizeRetryDone = true; migrating = true; btn.innerText = "Preparing photos...";
+             try { await migrationPromise; await migrateInlineImages(); } finally { migrating = false; btn.innerText = idleLabel; }
+             return doSave();
+           }
            if (payloadChars > 900000) {
              alert(`Your card is too big to save (${Math.round(payloadChars / 1024)} KB, the limit is about 880 KB).\n\n` +
                (storageProblem
@@ -1447,7 +1470,8 @@ body { padding-bottom: 5.5rem; }
              // Let the person retry instead of leaving a dead button.
              setTimeout(() => { btn.innerText = idleLabel; saving = false; }, 2500);
            }
-         });
+         }
+         $('edit-save-btn').addEventListener('click', () => doSave());
 
          // Coming back via the browser's Back button must re-check the real state instead of showing a stale form.
          window.addEventListener('pageshow', (e) => { if (e.persisted) window.location.reload(); });
