@@ -116,6 +116,18 @@ background-color: hsla(var(--hue), 45%, 12%, 0.4); backdrop-filter: blur(24px);
   padding: 1rem 2rem; border-radius: 4rem; font-weight: var(--font-semi-bold); transition: box-shadow 0.4s;
 }
 .nav__contact:hover { box-shadow: 0 8px 24px hsla(var(--hue), 75%, 60%, 0.3); }
+.nav__auth {
+  display: inline-flex; align-items: center; column-gap: .4rem;
+  color: var(--first-color); border: 1px solid var(--first-color);
+  padding: .65rem 1.3rem; border-radius: 4rem;
+  font-size: var(--small-font-size); font-weight: var(--font-semi-bold);
+  transition: background-color 0.3s, color 0.3s, box-shadow 0.3s;
+}
+.nav__auth:hover {
+  background-color: var(--first-color); color: var(--black-color);
+  box-shadow: 0 8px 24px hsla(var(--hue), 75%, 60%, 0.3);
+}
+@media (width >= 1150px) { .nav__list { align-items: center; } }
 .nav__close { position: absolute; color: var(--white-color); top: 1rem; right: 1rem; font-size: 1.5rem; cursor: none; }
 .show-menu { right: 0; }
 .scroll-header { background-color: var(--container-color); }
@@ -370,6 +382,7 @@ background-color: hsla(var(--hue), 45%, 12%, 0.4); backdrop-filter: blur(24px);
                   <li><a href="#service" class="nav__link">My Services</a></li>
                   <li><a href="#skills" class="nav__link">Skills</a></li>
                   <li><a href="#contact" class="nav__contact">Connect</a></li>
+                  <li><a href="#" id="nav-login" class="nav__auth"><i class="ri-lock-2-line"></i> Owner Login</a></li>
                </ul>
                <button class="nav__close" id="nav-close" aria-label="Close menu">
                   <i class="ri-close-large-line"></i>
@@ -1269,12 +1282,19 @@ window.addEventListener('scroll', scrollUp)
              editFab.style.display = 'flex';
            }
 
-           // Footer button: Logout for the owner, Login for everyone else.
            footerMode = isOwner ? 'logout' : 'login';
-           footerAuthBtn.innerHTML = isOwner
+           const authHtml = isOwner
              ? '<i class="ri-logout-box-r-line"></i> Logout'
              : '<i class="ri-lock-2-line"></i> Owner Login';
+
+           footerAuthBtn.innerHTML = authHtml;
            footerAuthBtn.style.display = 'inline-flex';
+
+           const navAuthBtn = $('nav-login');
+           if (navAuthBtn) {
+             navAuthBtn.innerHTML = authHtml;
+             navAuthBtn.style.display = 'inline-flex';
+           }
          }
 
          // Hero "Claim Card" -> claim.html (Google login, then the card is claimed for that account).
@@ -1283,8 +1303,8 @@ window.addEventListener('scroll', scrollUp)
            window.location.href = `claim.html?user=${slugParam}`;
          });
 
-         // Footer button -> Login (claim.html also works as the owner login for a claimed card) or Logout.
-         footerAuthBtn.addEventListener('click', async (e) => {
+         // Shared handler for BOTH Navbar and Footer Login/Logout buttons
+         const handleAuthClick = async (e) => {
            e.preventDefault();
            if (footerMode === 'login') {
              window.location.href = `claim.html?user=${slugParam}`;
@@ -1292,7 +1312,9 @@ window.addEventListener('scroll', scrollUp)
              try { await signOut(auth); } catch (err) { console.error('Sign-out error:', err); }
              window.location.replace(`index.html?user=${slugParam}`);
            }
-         });
+         };
+         footerAuthBtn.addEventListener('click', handleAuthClick);
+         $('nav-login')?.addEventListener('click', handleAuthClick);
 
 /* ---------------- WORK SECTION: slow auto-scrolling showcase ----------------
            Scrolls by itself, very slowly. As soon as the visitor touches / drags / hovers / scrolls it, it
