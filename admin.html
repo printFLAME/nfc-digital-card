@@ -8,7 +8,7 @@
       <style>
 /*=============== YOUR EXACT CSS (100% UNTOUCHED) ===============*/
 @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Syne:wght@400..800&display=swap");
-:root { --header-height: 3.5rem; --hue: 110; --first-color: hsl(var(--hue), 90%, 40%); --white-color: hsl(var(--hue), 24%, 98%); --black-color: hsl(var(--hue), 12%, 8%); --text-color: hsl(var(--hue), 4%, 70%); --body-color: hsl(var(--hue), 12%, 4%); --container-color: hsl(var(--hue), 8%, 10%); --body-font: "Poppins", sans-serif; --small-font-size: .813rem; }
+:root { --header-height: 3.5rem; --hue: 110; --first-color: hsl(var(--hue), 90%, 40%); --white-color: hsl(var(--hue), 24%, 98%); --black-color: hsl(var(--hue), 12%, 8%); --text-color: hsl(var(--hue), 4%, 70%); --body-color: hsl(var(--hue), 12%, 4%); --container-color: hsl(var(--hue), 45%, 12%); --body-font: "Poppins", sans-serif; --small-font-size: .813rem; }
 * { box-sizing: border-box; padding: 0; margin: 0; }
 body { background-color: var(--body-color); color: var(--text-color); font-family: var(--body-font); display: flex; justify-content: center; align-items: flex-start; padding: 2rem 1rem; }
 input, button, textarea, select { border: none; outline: none; background: none; }
@@ -100,6 +100,22 @@ input, button, textarea, select { border: none; outline: none; background: none;
 #avatar-preview.shape-penta     { border-radius: 0 !important; border: none !important; aspect-ratio: 1/1; height: auto !important; clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%); }
 #avatar-preview.shape-hexa      { border-radius: 0 !important; border: none !important; aspect-ratio: 1/1; height: auto !important; clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); }
 #avatar-preview.shape-heptagon  { border-radius: 0 !important; border: none !important; aspect-ratio: 1/1; height: auto !important; clip-path: polygon(50% 0%, 90% 20%, 100% 60%, 75% 100%, 25% 100%, 0% 60%, 10% 20%); }
+
+body { padding-bottom: 5.5rem; }
+#edit-save-btn.floating-save {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 9500;
+  padding: 0.9rem 1.8rem !important;
+  border: 2px solid var(--white-color) !important;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.75), 0 0 20px hsla(var(--hue), 90%, 40%, 0.45);
+  animation: popFloatingSave 0.25s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+}
+@keyframes popFloatingSave {
+  from { transform: translateY(20px) scale(0.9); opacity: 0; }
+  to   { transform: translateY(0) scale(1); opacity: 1; }
+}
       </style>
    </head>
    <body>
@@ -1170,6 +1186,15 @@ input, button, textarea, select { border: none; outline: none; background: none;
              }
 
              populate(data);
+             const modalEl = document.querySelector('.edit-modal-content');
+             const showFloatingSave = () => $('edit-save-btn').classList.add('floating-save');
+             modalEl.addEventListener('input', showFloatingSave);
+             modalEl.addEventListener('change', showFloatingSave);
+             modalEl.addEventListener('click', (e) => {
+               if (e.target.closest('.theme-circle, .add-btn, .sub-add-btn, .remove-btn, .nested-remove-btn, .sec-restore-btn')) {
+                 showFloatingSave();
+               }
+             });
              loader.style.display = 'none';
            } catch (err) {
              console.error("Load Error:", err);
