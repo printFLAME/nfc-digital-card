@@ -411,10 +411,6 @@ background-color: hsla(var(--hue), 45%, 12%, 0.4); backdrop-filter: blur(24px);
                      Add your tagline here.
                   </p>
                   
-                  <!-- NEW HERO LOGIN BUTTON -->
-                  <div style="text-align: center; margin-top: 1.5rem;" id="hero-login-wrapper">
-                     <a href="#" id="hero-login-btn" class="button">Claim Card</a>
-                  </div>
                </div>
                
                <div class="home__image">
@@ -894,8 +890,6 @@ window.addEventListener('scroll', scrollUp)
          const publicCustomSections = $('custom-sections-wrapper');
          const publicLinks = $('contact-links-wrapper');
          const editFab = $('edit-fab');
-         const heroClaimWrapper = $('hero-login-wrapper'); // Hero "Claim Card": ONLY for unclaimed cards
-         const heroClaimBtn = $('hero-login-btn');
          const footerAuthBtn = $('footer-login');           // Footer, always last: "Owner Login" (not signed in) / "Logout" (owner)
 
          // Errors are shown INSIDE the loader overlay, so the page can never end up as an empty black screen.
@@ -1256,19 +1250,13 @@ window.addEventListener('scroll', scrollUp)
          }
 
          /* ---------------- who sees what ----------------
-            Unclaimed card            -> hero "Claim Card" (click -> Google login -> claims it)
-            Claimed card, ANY viewer  -> hero "Claim Card" is hidden. Read-only profile.
-            Claimed, not the owner    -> footer "Owner Login" (strangers, or the owner on a new device)
-            Claimed, viewer = owner   -> Settings gear + footer "Logout"
+            Unclaimed card            -> never shown here: init() sends it straight to claim.html
+            Claimed, not the owner    -> read-only profile, no gear, navbar + footer "Owner Login" (-> login.html)
+            Claimed, viewer = owner   -> Settings gear + navbar + footer "Logout"
             The footer button sits at the very end of the page and carries both Login and Logout.  */
          let footerMode = 'login';
 
          function applyAccessControls(card, isOwner) {
-           const isClaimed = !!card;
-
-           // Hero "Claim Card": visible ONLY while nobody owns the card.
-           if (heroClaimWrapper) heroClaimWrapper.style.display = isClaimed ? 'none' : '';
-
            // Settings gear: owner only.
            editFab.style.display = 'none';
            if (isOwner) {
@@ -1291,17 +1279,12 @@ window.addEventListener('scroll', scrollUp)
            }
          }
 
-         // Hero "Claim Card" -> claim.html (Google login, then the card is claimed for that account).
-         heroClaimBtn.addEventListener('click', (e) => {
-           e.preventDefault();
-           window.location.href = `claim.html?user=${slugParam}`;
-         });
-
          // Shared handler for BOTH Navbar and Footer Login/Logout buttons
          const handleAuthClick = async (e) => {
            e.preventDefault();
            if (footerMode === 'login') {
-             window.location.href = `claim.html?user=${slugParam}`;
+             // Owner login only. Claiming a new card happens on claim.html (index.html sends unclaimed cards there itself).
+             window.location.href = `login.html?user=${slugParam}`;
            } else {
              try { await signOut(auth); } catch (err) { console.error('Sign-out error:', err); }
              window.location.replace(`index.html?user=${slugParam}`);
@@ -1469,7 +1452,13 @@ window.addEventListener('scroll', scrollUp)
                auth.authStateReady()
              ]));
 
-             const card = snap.exists() ? snap.data() : null;
+             // Unclaimed card: nothing to show yet. Go straight to the onboarding page (the loader stays up meanwhile).
+             if (!snap.exists()) {
+               window.location.replace(`claim.html?user=${slugParam}`);
+               return;
+             }
+
+             const card = snap.data();
              const user = auth.currentUser;
              const isOwner = !!(card && user && card.ownerUid && card.ownerUid === user.uid);
 

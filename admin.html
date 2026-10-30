@@ -628,9 +628,10 @@ body { padding-bottom: 5.5rem; }
 
          const loader = $('loader');
 
-         // Leaving this page ALWAYS goes to the public profile (never to claim.html), and uses replace()
-         // so the Back button can't loop between pages.
+         // Leaving this page goes to the public profile, or to login.html when nobody is signed in.
+         // Both use replace() so the Back button can't loop between pages.
          const goToProfile = () => window.location.replace(`index.html?user=${slugParam}`);
+         const goToLogin = () => window.location.replace(`login.html?user=${slugParam}`);
 
          // Errors are shown INSIDE the loader overlay, so a failure can never leave a silent black screen.
          function showLoadError() {
@@ -1181,8 +1182,8 @@ body { padding-bottom: 5.5rem; }
              await withTimeout(auth.authStateReady());
              const user = auth.currentUser;
 
-             // Not signed in: this page is not for you. Show the public profile (never bounce to claim.html -> no loops).
-             if (!user) { goToProfile(); return; }
+             // Not signed in: the owner needs to log in first (login.html sends them back to the profile, not here -> no loops).
+             if (!user) { goToLogin(); return; }
 
              const snap = await withTimeout(getDoc(doc(db, "DigitalCard", userSlug)));
 
@@ -1229,7 +1230,11 @@ body { padding-bottom: 5.5rem; }
            const btn = $('edit-save-btn');
            const idleLabel = btn.innerText;
 
-           if (!auth.currentUser) { goToProfile(); return; }
+           if (!auth.currentUser) {
+             alert("Your login session has ended. Please log in again to save your changes.");
+             goToLogin();
+             return;
+           }
 
            if (pendingUploads > 0) {
              alert("Your photos are still uploading. Please wait a few seconds, then press Save again.");

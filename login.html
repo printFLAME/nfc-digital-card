@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+   <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Owner Login | FLAME</title>
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.9.0/fonts/remixicon.css">
+      <style>
+/*=============== YOUR EXACT CSS (100% UNTOUCHED) ===============*/
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Syne:wght@400..800&display=swap");
+:root { --header-height: 3.5rem; --hue: 110; --first-color: hsl(var(--hue), 90%, 40%); --white-color: hsl(var(--hue), 24%, 98%); --black-color: hsl(var(--hue), 12%, 8%); --text-color: hsl(var(--hue), 4%, 70%); --body-color: hsl(var(--hue), 12%, 4%); --container-color: hsl(var(--hue), 8%, 10%); --body-font: "Poppins", sans-serif; --second-font: "Syne", sans-serif; --biggest-font-size: 2rem; --bigger-font-size: 1.75rem; --h1-font-size: 1.5rem; --h2-font-size: 1.25rem; --h3-font-size: 1rem; --normal-font-size: .938rem; --small-font-size: .813rem; --font-regular: 400; --font-medium: 500; --font-semi-bold: 600; --z-tooltip: 10; --z-fixed: 100; }
+@media (width >= 1150px) { :root { --biggest-font-size: 5rem; --bigger-font-size: 3rem; --h1-font-size: 2.25rem; --h2-font-size: 1.5rem; --h3-font-size: 1.25rem; --normal-font-size: 1rem; } }
+* { box-sizing: border-box; padding: 0; margin: 0; }
+html { scroll-behavior: smooth; }
+body, input, button, textarea, label { font-family: var(--body-font); font-size: var(--normal-font-size); }
+body { background-color: var(--body-color); color: var(--text-color); }
+input, button, textarea { border: none; outline: none; background: none; }
+h1, h2, h3, h4 { color: var(--white-color); font-weight: var(--font-semi-bold); font-family: var(--second-font); }
+.button { display: inline-flex; align-items: center; justify-content: center; column-gap: .5rem; background-color: var(--first-color); color: var(--black-color); padding: 1rem 2rem; border-radius: 4rem; font-weight: var(--font-semi-bold); transition: box-shadow 0.4s; cursor: pointer; }
+.button:hover { box-shadow: 0 8px 24px hsla(var(--hue), 75%, 60%, 0.3); }
+
+#loader { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--body-color); display: flex; justify-content: center; align-items: center; z-index: 9999; }
+.spinner { width: 50px; height: 50px; border: 3px solid rgba(255,255,255,0.1); border-radius: 50%; border-top-color: var(--first-color); animation: spin 1s ease-in-out infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.setup-screen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--body-color); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 2000; text-align: center; padding: 2rem; color: var(--text-color); }
+.setup-screen h1 { font-size: var(--biggest-font-size); margin: 1rem 0; color: var(--white-color); }
+      </style>
+   </head>
+   <body>
+      <!-- Visible from the first paint: an unclaimed card is sent on to claim.html, so the login screen must not flash first -->
+      <div id="loader"><div class="spinner"></div></div>
+
+      <div id="setup-screen" class="setup-screen">
+         <i class="ri-nfc-line" style="font-size: 4rem; color: var(--first-color);"></i>
+         <h1>Owner Login</h1>
+         <p style="margin-bottom: 2rem;">Sign in with the Google account that owns this card to edit it.</p>
+         <button class="button" id="setup-login-btn"><i class="ri-google-fill"></i> Sign in with Google</button>
+      </div>
+
+      <script>
+         // If the app script itself cannot load (offline / blocked), never leave a blank spinner forever.
+         setTimeout(function () {
+            var l = document.getElementById('loader');
+            if (l && !window.__moduleStarted) {
+               l.innerHTML = '<div style="text-align:center; padding:2rem; color:#fff;"><h1 style="font-size:1.5rem; margin-bottom:.8rem;">Couldn&#39;t load this page</h1><p style="color:#888; margin-bottom:1.5rem;">Check your connection and try again.</p><button class="button" onclick="location.reload()">Try again</button></div>';
+            }
+         }, 10000);
+      </script>
+
+      <script type="module">
+         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+         import { initializeAuth, browserSessionPersistence, browserPopupRedirectResolver, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+         import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+
+         window.__moduleStarted = true;
+
+         const firebaseConfig = {
+           apiKey: "AIzaSyA043mcgewwke4Rt2HusOPbcxgmzUv2bM0",
+           authDomain: "nfc-card-by-flame.firebaseapp.com",
+           projectId: "nfc-card-by-flame",
+           storageBucket: "nfc-card-by-flame.firebasestorage.app",
+           messagingSenderId: "185781519047",
+           appId: "1:185781519047:web:dcf141d9669a3055e274e2"
+         };
+
+         const app = initializeApp(firebaseConfig);
+
+         // NO GHOST SESSIONS: login lives in sessionStorage only (this tab, gone when the tab closes).
+         // Popup sign-in is used on purpose: no page redirect means no redirect loops.
+         const auth = initializeAuth(app, {
+           persistence: browserSessionPersistence,
+           popupRedirectResolver: browserPopupRedirectResolver
+         });
+         const db = getFirestore(app);
+
+         const provider = new GoogleAuthProvider();
+         provider.setCustomParameters({ prompt: 'select_account' }); // always let the person choose the account
+
+         // The card ID comes from the URL and ONLY from the URL (no stored fallback).
+         try { sessionStorage.removeItem('savedUserSlug'); localStorage.removeItem('savedUserSlug'); } catch (_) {}
+
+         const $ = (id) => document.getElementById(id);
+         const withTimeout = (promise, ms = 8000) =>
+           Promise.race([promise, new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))]);
+
+         const userSlug = (new URLSearchParams(window.location.search).get('user') || '').trim();
+         const slugIsValid = /^[A-Za-z0-9._-]{1,64}$/.test(userSlug) && userSlug !== '.' && userSlug !== '..';
+         const slugParam = encodeURIComponent(userSlug);
+
+         const loader = $('loader');
+         const loginBtn = $('setup-login-btn');
+
+         // replace() keeps this page out of the history stack, so Back can never bounce into a loop.
+         const goToProfile = () => window.location.replace(`index.html?user=${slugParam}`);
+         const goToClaim = () => window.location.replace(`claim.html?user=${slugParam}`);
+
+         async function init() {
+           if (!slugIsValid) {
+             loader.innerHTML = "<h1 style='color:white; text-align:center; margin-top:50px;'>Error: Missing ?user= ID in the link!</h1>";
+             return;
+           }
+
+           try {
+             await withTimeout(auth.authStateReady());
+             const snap = await withTimeout(getDoc(doc(db, "DigitalCard", userSlug)));
+
+             // Nobody owns this card yet: this page is only for owners, so send them to the onboarding page.
+             if (!snap.exists()) { goToClaim(); return; }
+
+             // Already signed in as the owner: nothing to do here, go to the profile.
+             const user = auth.currentUser;
+             if (user && snap.data().ownerUid === user.uid) { goToProfile(); return; }
+           } catch (err) {
+             // The pre-check is only a convenience. The click handler below does the real ownership check.
+             console.warn('Card pre-check failed:', err);
+           }
+           loader.style.display = 'none';
+         }
+
+         // Owner login. This page NEVER creates or claims a card: it only signs in and checks ownership.
+         let busy = false;
+         loginBtn.addEventListener('click', async () => {
+           if (busy || !slugIsValid) return;
+           busy = true;
+           loader.style.display = 'flex';
+
+           try {
+             const { user } = await signInWithPopup(auth, provider);
+             const snap = await withTimeout(getDoc(doc(db, "DigitalCard", userSlug)));
+
+             // Not claimed (any more): leave no session behind and let the onboarding page handle it.
+             if (!snap.exists()) {
+               try { await signOut(auth); } catch (_) {}
+               goToClaim();
+               return;
+             }
+
+             // The signed-in Google account owns this card: back to the profile (with the Settings gear).
+             if (snap.data().ownerUid === user.uid) { goToProfile(); return; }
+
+             // A different Google account: sign it out again and let the person try the right one.
+             try { await signOut(auth); } catch (_) {}
+             loader.style.display = 'none';
+             busy = false;
+             alert("This Google account does not own this card. Please sign in with the account that was used to claim it.");
+           } catch (error) {
+             console.error("Auth Error:", error);
+             loader.style.display = 'none';
+             busy = false;
+
+             const code = error && error.code;
+             if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') return;
+             if (code === 'auth/popup-blocked') alert("Your browser blocked the sign-in popup. Please allow popups for this site and try again.");
+             else alert("Login failed. Please try again.");
+           }
+         });
+
+         // Coming back via the browser's Back button must re-check the real state instead of showing a stale screen.
+         window.addEventListener('pageshow', (e) => { if (e.persisted) window.location.reload(); });
+
+         init();
+      </script>
+   </body>
+</html>

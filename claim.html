@@ -3,44 +3,146 @@
    <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Claim Card | FLAME</title>
+      <title>Activate Your S.U.I.T | OTVAH Studios</title>
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.9.0/fonts/remixicon.css">
       <style>
-/*=============== YOUR EXACT CSS (100% UNTOUCHED) ===============*/
+/*=============== GOOGLE FONTS + THEME VARIABLES (same as index.html) ===============*/
 @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Syne:wght@400..800&display=swap");
-:root { --header-height: 3.5rem; --hue: 110; --first-color: hsl(var(--hue), 75%, 60%); --white-color: hsl(var(--hue), 24%, 98%); --black-color: hsl(var(--hue), 12%, 8%); --text-color: hsl(var(--hue), 4%, 70%); --body-color: hsl(var(--hue), 12%, 4%); --container-color: hsl(var(--hue), 8%, 10%); --body-font: "Poppins", sans-serif; --second-font: "Syne", sans-serif; --biggest-font-size: 2rem; --bigger-font-size: 1.75rem; --h1-font-size: 1.5rem; --h2-font-size: 1.25rem; --h3-font-size: 1rem; --normal-font-size: .938rem; --small-font-size: .813rem; --font-regular: 400; --font-medium: 500; --font-semi-bold: 600; --z-tooltip: 10; --z-fixed: 100; }
-@media (width >= 1150px) { :root { --biggest-font-size: 5rem; --bigger-font-size: 3rem; --h1-font-size: 2.25rem; --h2-font-size: 1.5rem; --h3-font-size: 1.25rem; --normal-font-size: 1rem; } }
+:root { --header-height: 3.5rem; --hue: 110; --first-color: hsl(var(--hue), 90%, 40%); --accent-color: hsl(var(--hue), 75%, 60%); --white-color: hsl(var(--hue), 24%, 98%); --black-color: hsl(var(--hue), 12%, 8%); --text-color: hsl(var(--hue), 4%, 70%); --body-color: hsl(var(--hue), 12%, 4%); --container-color: hsl(var(--hue), 8%, 10%); --body-font: "Poppins", sans-serif; --second-font: "Syne", sans-serif; --h1-font-size: 1.5rem; --h2-font-size: 1.25rem; --h3-font-size: 1rem; --normal-font-size: .938rem; --small-font-size: .813rem; --font-regular: 400; --font-medium: 500; --font-semi-bold: 600; }
+@media (width >= 1150px) { :root { --h1-font-size: 2.25rem; --h2-font-size: 1.5rem; --h3-font-size: 1.25rem; --normal-font-size: 1rem; } }
 * { box-sizing: border-box; padding: 0; margin: 0; }
 html { scroll-behavior: smooth; }
 body, input, button, textarea, label { font-family: var(--body-font); font-size: var(--normal-font-size); }
-body { background-color: var(--body-color); color: var(--text-color); }
+body { background-color: var(--body-color); color: var(--text-color); min-height: 100vh; overflow-x: hidden; }
 input, button, textarea { border: none; outline: none; background: none; }
 h1, h2, h3, h4 { color: var(--white-color); font-weight: var(--font-semi-bold); font-family: var(--second-font); }
-.button { display: inline-flex; align-items: center; justify-content: center; column-gap: .5rem; background-color: var(--first-color); color: var(--black-color); padding: 1rem 2rem; border-radius: 4rem; font-weight: var(--font-semi-bold); transition: box-shadow 0.4s; cursor: pointer; }
+.button { display: inline-flex; align-items: center; justify-content: center; column-gap: .5rem; background-color: var(--first-color); color: var(--black-color); padding: 1rem 2rem; border-radius: 4rem; font-weight: var(--font-semi-bold); transition: box-shadow 0.4s, transform .3s; cursor: pointer; }
 .button:hover { box-shadow: 0 8px 24px hsla(var(--hue), 75%, 60%, 0.3); }
+.button:focus-visible { outline: 2px solid var(--white-color); outline-offset: 3px; }
 
+/*=============== LOADER (shown while the card is being checked) ===============*/
 #loader { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--body-color); display: flex; justify-content: center; align-items: center; z-index: 9999; }
 .spinner { width: 50px; height: 50px; border: 3px solid rgba(255,255,255,0.1); border-radius: 50%; border-top-color: var(--first-color); animation: spin 1s ease-in-out infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-.setup-screen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--body-color); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 2000; text-align: center; padding: 2rem; color: var(--text-color); }
-.setup-screen h1 { font-size: var(--biggest-font-size); margin: 1rem 0; color: var(--white-color); }
+/*=============== ONBOARDING PAGE ===============*/
+.claim { position: relative; isolation: isolate; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 1.25rem 1.5rem 2rem; }
+.claim::before { content: ""; position: absolute; inset: 0; z-index: -2;
+  background: radial-gradient(60rem 38rem at 50% -8%, hsla(var(--hue), 90%, 40%, .30), transparent 62%),
+              radial-gradient(38rem 28rem at 100% 100%, hsla(var(--hue), 80%, 45%, .14), transparent 62%),
+              radial-gradient(30rem 24rem at 0% 70%, hsla(var(--hue), 80%, 45%, .08), transparent 62%); }
+.claim::after { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background-image: linear-gradient(hsla(var(--hue), 20%, 100%, .035) 1px, transparent 1px), linear-gradient(90deg, hsla(var(--hue), 20%, 100%, .035) 1px, transparent 1px);
+  background-size: 56px 56px;
+  -webkit-mask-image: radial-gradient(ellipse at 50% 18%, #000 18%, transparent 72%); mask-image: radial-gradient(ellipse at 50% 18%, #000 18%, transparent 72%); }
+
+.claim__bar { width: 100%; max-width: 1120px; display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: .5rem 0; }
+.claim__logo { display: inline-flex; align-items: center; column-gap: .55rem; font-family: var(--second-font); font-weight: 700; font-size: 1.15rem; letter-spacing: .02em; color: var(--white-color); }
+.claim__logo i { color: var(--accent-color); font-size: 1.4rem; }
+.claim__logo span { color: var(--accent-color); }
+.claim__chip { font-size: var(--small-font-size); color: var(--text-color); border: 1px solid hsla(var(--hue), 20%, 100%, .14); background: hsla(var(--hue), 8%, 10%, .6); padding: .4rem .9rem; border-radius: 2rem; max-width: 55vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.claim__chip b { color: var(--white-color); font-weight: var(--font-medium); }
+
+.claim__hero { flex: 1; width: 100%; max-width: 740px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 2.5rem 0 2rem; }
+.claim__nfc { position: relative; width: 112px; height: 112px; display: grid; place-items: center; margin-bottom: 2rem; border-radius: 50%;
+  background: linear-gradient(160deg, hsla(var(--hue), 90%, 40%, .28), hsla(var(--hue), 90%, 40%, .05));
+  border: 1px solid hsla(var(--hue), 90%, 55%, .5); box-shadow: 0 0 64px hsla(var(--hue), 90%, 40%, .35); }
+.claim__nfc i { font-size: 3.1rem; color: var(--accent-color); }
+.claim__nfc::before, .claim__nfc::after { content: ""; position: absolute; inset: 0; border-radius: 50%; border: 1px solid hsla(var(--hue), 90%, 55%, .55); animation: ring 3.2s ease-out infinite; }
+.claim__nfc::after { animation-delay: 1.6s; }
+@keyframes ring { 0% { transform: scale(1); opacity: .65; } 100% { transform: scale(1.75); opacity: 0; } }
+
+.claim__eyebrow { font-size: var(--small-font-size); letter-spacing: .22em; text-transform: uppercase; color: var(--accent-color); margin-bottom: 1rem; font-weight: var(--font-medium); }
+.claim h1 { font-size: clamp(2.2rem, 7.2vw, 4.3rem); line-height: 1.04; letter-spacing: -.01em; margin-bottom: .9rem; }
+.claim h1 span { color: var(--accent-color); letter-spacing: .04em; }
+.claim__tag { font-family: var(--second-font); font-size: .85rem; letter-spacing: .2em; text-transform: uppercase; color: var(--white-color); opacity: .75; margin-bottom: 1.6rem; }
+.claim__lead { max-width: 34rem; line-height: 1.75; margin-bottom: 2.4rem; }
+
+.claim__cta { padding: 1.05rem 2.2rem; column-gap: .9rem; box-shadow: 0 10px 36px hsla(var(--hue), 90%, 40%, .35); }
+.claim__cta:hover { transform: translateY(-2px); box-shadow: 0 14px 44px hsla(var(--hue), 80%, 55%, .45); }
+.claim__cta > i { font-size: 1.7rem; }
+.claim__cta-text { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.25; text-align: left; }
+.claim__cta-text strong { font-size: 1.1rem; font-weight: var(--font-semi-bold); }
+.claim__cta-text small { font-size: var(--small-font-size); font-weight: var(--font-medium); opacity: .8; }
+.claim__fine { max-width: 30rem; margin-top: 1.4rem; font-size: var(--small-font-size); line-height: 1.6; opacity: .8; }
+
+.claim__steps { width: 100%; max-width: 1120px; display: grid; grid-template-columns: 1fr; gap: 1rem; padding: 1rem 0 2rem; }
+.claim__step { position: relative; background: hsla(var(--hue), 8%, 10%, .72); border: 1px solid hsla(var(--hue), 20%, 100%, .08); border-radius: 1.25rem; padding: 1.5rem; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); transition: transform .35s, border-color .35s; }
+.claim__step:hover { transform: translateY(-4px); border-color: hsla(var(--hue), 80%, 55%, .5); }
+.claim__step-no { position: absolute; top: 1.1rem; right: 1.3rem; font-family: var(--second-font); font-weight: 800; font-size: 1.9rem; color: hsla(var(--hue), 20%, 100%, .07); }
+.claim__step i { display: grid; place-items: center; width: 2.8rem; height: 2.8rem; margin-bottom: 1rem; border-radius: .9rem; font-size: 1.4rem; color: var(--accent-color); background: hsla(var(--hue), 90%, 40%, .14); border: 1px solid hsla(var(--hue), 90%, 55%, .3); }
+.claim__step h3 { font-size: var(--h3-font-size); margin-bottom: .4rem; }
+.claim__step p { font-size: var(--small-font-size); line-height: 1.65; }
+
+.claim__foot { width: 100%; max-width: 1120px; padding-top: 1.25rem; border-top: 1px solid hsla(var(--hue), 20%, 100%, .08); text-align: center; font-size: var(--small-font-size); letter-spacing: .04em; }
+.claim__foot b { color: var(--white-color); font-weight: var(--font-medium); }
+
+/* gentle entrance */
+.rise { opacity: 0; transform: translateY(18px); animation: rise .8s cubic-bezier(.2, .7, .2, 1) forwards; }
+.rise:nth-child(2) { animation-delay: .08s; } .rise:nth-child(3) { animation-delay: .16s; } .rise:nth-child(4) { animation-delay: .24s; } .rise:nth-child(5) { animation-delay: .32s; } .rise:nth-child(6) { animation-delay: .4s; }
+@keyframes rise { to { opacity: 1; transform: none; } }
+
+@media (width >= 768px) {
+  .claim { padding: 1.5rem 2.5rem 2.5rem; }
+  .claim__steps { grid-template-columns: repeat(3, 1fr); gap: 1.25rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .claim__nfc::before, .claim__nfc::after { animation: none; opacity: 0; }
+  .rise { animation: none; opacity: 1; transform: none; }
+  .claim__step, .claim__cta, .button { transition: none; }
+}
       </style>
    </head>
    <body>
-      <div id="loader" style="display: none;"><div class="spinner"></div></div>
+      <!-- Visible from the first paint: a card that is already claimed is sent on to its profile, so the page must not flash first -->
+      <div id="loader"><div class="spinner"></div></div>
 
-      <div id="setup-screen" class="setup-screen">
-         <i class="ri-nfc-line" style="font-size: 4rem; color: var(--first-color);"></i>
-         <h1>Claim Your Card</h1>
-         <p style="margin-bottom: 2rem;">This NFC card is unregistered. Log in to claim this link and build your custom profile.</p>
-         <button class="button" id="setup-login-btn"><i class="ri-google-fill"></i> Sign in with Google</button>
-      </div>
+      <main class="claim">
+         <div class="claim__bar">
+            <div class="claim__logo"><i class="ri-fire-fill"></i> OTVAH <span>Studios</span></div>
+            <div class="claim__chip">Card ID &middot; <b id="claim-id">&mdash;</b></div>
+         </div>
+
+         <section class="claim__hero">
+            <div class="claim__nfc rise"><i class="ri-nfc-line"></i></div>
+            <p class="claim__eyebrow rise">Welcome to OTVAH Studios</p>
+            <h1 class="rise">Activate Your <span>S.U.I.T</span></h1>
+            <p class="claim__tag rise">Shareable User Identity Tag</p>
+            <p class="claim__lead rise">Your new NFC card is ready. Claim it in one tap with your Google account, build your personal profile, and share who you are with a single tap on any phone &mdash; no app needed.</p>
+            <button class="button claim__cta rise" id="claim-btn" type="button">
+               <i class="ri-google-fill"></i>
+               <span class="claim__cta-text"><strong>Claim Your Card</strong> <small>Sign in with Google</small></span>
+            </button>
+            <p class="claim__fine rise">By continuing, your Google account becomes the owner of this card. Only you will be able to edit it.</p>
+         </section>
+
+         <section class="claim__steps">
+            <article class="claim__step rise"><span class="claim__step-no">01</span><i class="ri-shield-user-line"></i><h3>Claim it</h3><p>Sign in with Google once. The card is locked to your account, so nobody else can change it.</p></article>
+            <article class="claim__step rise"><span class="claim__step-no">02</span><i class="ri-palette-line"></i><h3>Make it yours</h3><p>Add your photo, projects, services and contact links, and pick the colour that fits your brand.</p></article>
+            <article class="claim__step rise"><span class="claim__step-no">03</span><i class="ri-share-forward-line"></i><h3>Tap &amp; share</h3><p>Tap your card on any phone and your profile opens instantly. Update it any time, the same card keeps working.</p></article>
+         </section>
+
+         <footer class="claim__foot">
+            <b>OTVAH Studios</b> &middot; S.U.I.T &mdash; Shareable User Identity Tag
+         </footer>
+      </main>
+
+      <script>
+         // If the app script itself cannot load (offline / blocked), never leave a blank spinner forever.
+         setTimeout(function () {
+            var l = document.getElementById('loader');
+            if (l && !window.__moduleStarted) {
+               l.innerHTML = '<div style="text-align:center; padding:2rem; color:#fff;"><h1 style="font-size:1.5rem; margin-bottom:.8rem;">Couldn&#39;t load this page</h1><p style="color:#888; margin-bottom:1.5rem;">Check your connection and try again.</p><button class="button" onclick="location.reload()">Try again</button></div>';
+            }
+         }, 10000);
+      </script>
 
       <script type="module">
          import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
          import { initializeAuth, browserSessionPersistence, browserPopupRedirectResolver, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
          import { getFirestore, doc, getDoc, runTransaction, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+
+         window.__moduleStarted = true;
 
          const firebaseConfig = {
            apiKey: "AIzaSyA043mcgewwke4Rt2HusOPbcxgmzUv2bM0",
@@ -64,11 +166,11 @@ h1, h2, h3, h4 { color: var(--white-color); font-weight: var(--font-semi-bold); 
          const provider = new GoogleAuthProvider();
          provider.setCustomParameters({ prompt: 'select_account' }); // always let the person choose the account
 
-         // The card ID comes from the URL and ONLY from the URL (the old sessionStorage fallback is gone).
+         // The card ID comes from the URL and ONLY from the URL (no stored fallback).
          try { sessionStorage.removeItem('savedUserSlug'); localStorage.removeItem('savedUserSlug'); } catch (_) {}
 
          const $ = (id) => document.getElementById(id);
-         const withTimeout = (promise, ms = 15000) =>
+         const withTimeout = (promise, ms = 8000) =>
            Promise.race([promise, new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))]);
 
          const userSlug = (new URLSearchParams(window.location.search).get('user') || '').trim();
@@ -76,34 +178,22 @@ h1, h2, h3, h4 { color: var(--white-color); font-weight: var(--font-semi-bold); 
          const slugParam = encodeURIComponent(userSlug);
 
          const loader = $('loader');
-         const loginBtn = $('setup-login-btn');
+         const claimBtn = $('claim-btn');
+         if (slugIsValid) $('claim-id').textContent = userSlug;
 
-         // Replace-navigation keeps this page out of the history stack, so Back can never bounce into a loop.
+         // replace() keeps this page out of the history stack, so Back can never bounce into a loop.
          const goToProfile = () => window.location.replace(`index.html?user=${slugParam}`);
 
          async function init() {
            if (!slugIsValid) {
              loader.innerHTML = "<h1 style='color:white; text-align:center; margin-top:50px;'>Error: Missing ?user= ID in the link!</h1>";
-             loader.style.display = 'flex';
              return;
            }
 
-           loader.style.display = 'flex';
            try {
-             await withTimeout(auth.authStateReady());
              const snap = await withTimeout(getDoc(doc(db, "DigitalCard", userSlug)));
-
-             if (snap.exists()) {
-               const user = auth.currentUser;
-               // Already signed in as the owner: nothing to claim, go straight to the profile.
-               if (user && snap.data().ownerUid === user.uid) { goToProfile(); return; }
-
-               // Already claimed: this page becomes a plain owner login (copy only, layout untouched).
-               const heading = document.querySelector('#setup-screen h1');
-               const text = document.querySelector('#setup-screen p');
-               if (heading) heading.textContent = 'Owner Login';
-               if (text) text.textContent = 'This card is already registered. Sign in with the Google account that owns it.';
-             }
+             // Already claimed (by anyone, including you): nothing to claim here, show the card.
+             if (snap.exists()) { goToProfile(); return; }
            } catch (err) {
              // The pre-check is only a convenience. The transaction below is the real gatekeeper.
              console.warn('Card pre-check failed:', err);
@@ -114,7 +204,7 @@ h1, h2, h3, h4 { color: var(--white-color); font-weight: var(--font-semi-bold); 
          // THE ONLY PLACE A CARD CAN BE CLAIMED: an explicit click on the button.
          // Nothing here runs from an auth listener, so there is no background auto-claim.
          let busy = false;
-         loginBtn.addEventListener('click', async () => {
+         claimBtn.addEventListener('click', async () => {
            if (busy || !slugIsValid) return;
            busy = true;
            loader.style.display = 'flex';
@@ -146,9 +236,9 @@ h1, h2, h3, h4 { color: var(--white-color); font-weight: var(--font-semi-bold); 
 
              if (outcome === 'taken') {
                try { await signOut(auth); } catch (_) {}
-               alert("This card is already registered to a different Google account.");
+               alert("This card was just claimed by a different Google account.");
              }
-             goToProfile(); // owner lands on the normal profile page (with the Settings gear), not the form
+             goToProfile(); // the owner lands on the profile page (with the Settings gear)
            } catch (error) {
              console.error("Auth Error:", error);
              loader.style.display = 'none';
